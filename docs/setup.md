@@ -31,9 +31,10 @@ repository; see [scaffold.md](scaffold.md) for the full layout. The root
 
 **The team has already downloaded the data** (about 0.7 GB, shared through the
 Drive folder linked in the README). Put the CSVs under `data/raw/modis/` and
-`data/raw/viirs/`. The ingest step reads the `fire_archive_*.csv` files and
-ignores the NRT files. A MAP_KEY is only needed to refresh or extend the data;
-the rest of this section applies only if you need to download again.
+`data/raw/viirs/`. The ingest step reads `modis_*.csv` from the MODIS folder
+and `viirs_*.csv` from the VIIRS folder. A MAP_KEY is only needed to refresh or
+extend the data; the rest of this section applies only if you need to download
+again.
 
 1. Request a MAP_KEY on the FIRMS website (look for the Area API / MAP_KEY
    registration page).
