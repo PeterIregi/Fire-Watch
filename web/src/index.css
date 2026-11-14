@@ -840,3 +840,77 @@ a:focus-visible {
     min-width: 0;
   }
 }
+
+/* Fire activity legend */
+
+.firewatch-map-shell {
+  position: relative;
+  width: 100%;
+}
+
+.fire-legend {
+  position: absolute;
+  z-index: 500;
+  right: 18px;
+  bottom: 24px;
+  width: 190px;
+  padding: 14px 16px;
+  background: rgba(17, 25, 29, 0.94);
+  border: 1px solid rgba(240, 160, 75, 0.35);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.legend-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e8edf0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.legend-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f0a04b;
+  box-shadow: 0 0 8px rgba(240, 160, 75, 0.7);
+}
+
+.fire-legend p {
+  margin: 9px 0 8px;
+  color: #87969e;
+  font-size: 11px;
+}
+
+.legend-scale {
+  display: flex;
+  gap: 3px;
+  height: 9px;
+}
+
+.legend-swatch {
+  flex: 1;
+  border-radius: 2px;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+  color: #87969e;
+  font-size: 9px;
+  letter-spacing: 0.8px;
+}
+
+@media (max-width: 640px) {
+  .fire-legend {
+    right: 10px;
+    bottom: 14px;
+    width: 155px;
+    padding: 11px 12px;
+  }
+}
