@@ -97,7 +97,8 @@ Expected outputs:
 |---|---|
 | ingest | `data/raw/...` yearly CSVs |
 | clean | `data/interim/clean_detections.parquet` |
-| grid / aggregate | `data/interim/cell_month.parquet` |
+| grid | `data/interim/gridded_detections.parquet` |
+| aggregate | `data/interim/cell_month_raw.parquet` |
 | harmonize | calibration coefficients, validation metrics, `validation_scatter.png` |
 | export | `web/public/data/firewatch.json.gz` and `web/public/data/detections/YYYY.json.gz` |
 
