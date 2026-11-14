@@ -84,7 +84,7 @@ Planned entry points (run in order; each step reads the previous step's output):
 
 ```bash
 python ingest.py     --raw-dir ../data/raw --bbox 29.3 -11.8 40.5 -0.9
-python clean.py      --modis-min-conf 30 --viirs-drop low
+python clean.py      --modis-min-conf 30 --viirs-drop l low
 python grid.py       --grid 0.25
 python aggregate.py
 python harmonize.py  --train 2012-2018 --test 2019-2025
@@ -96,7 +96,7 @@ Expected outputs:
 | Step | Output |
 |---|---|
 | ingest | `data/raw/...` yearly CSVs |
-| clean | `data/interim/clean_*.parquet` |
+| clean | `data/interim/clean_detections.parquet` |
 | grid / aggregate | `data/interim/cell_month.parquet` |
 | harmonize | calibration coefficients, validation metrics, `validation_scatter.png` |
 | export | `web/public/data/firewatch.json.gz` and `web/public/data/detections/YYYY.json.gz` |
