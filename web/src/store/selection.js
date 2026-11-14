@@ -125,3 +125,34 @@ export function getSourceSeries(series, source) {
     value: values[metric],
   }))
 }
+
+/**
+ * Calculate a cell's total fire activity for the selected source and date range.
+ */
+export function getCellActivity(dataset, cellId, source, dateRange) {
+  const sourceIndex = SOURCE_INDEX[source]
+
+  if (sourceIndex === undefined) {
+    throw new Error(`Unknown data source: ${source}`)
+  }
+
+  const { start, end } = dateRange
+  const { months } = dataset.meta
+
+  if (!start || !end || start > end) {
+    throw new Error('Invalid date range')
+  }
+
+  const records = dataset.data[cellId] ?? []
+
+  return records.reduce((total, record) => {
+    const [monthIndex, ...measurements] = record
+    const month = months[monthIndex]
+
+    if (!month || month < start || month > end) {
+      return total
+    }
+
+    return total + measurements[sourceIndex - 1]
+  }, 0)
+}
