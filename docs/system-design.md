@@ -344,8 +344,8 @@ layout are still to be designed.
 
 | Layer | Choice | Reason |
 |---|---|---|
-| Data processing | Python, pandas, numpy, scipy | Fast to write; stats built in |
-| Storage between steps | Parquet (pyarrow) or CSV | Re-runnable stages |
+| Data processing | Python, Polars, NumPy, SciPy | Fast to write; stats built in |
+| Storage between steps | Parquet (Polars) or CSV | Re-runnable stages |
 | Web data format | Gzipped JSON | No backend needed |
 | Frontend | React with Vite | Quick scaffold and deploy |
 | Map | Leaflet plus Leaflet.draw or Geoman | Rectangle selection |

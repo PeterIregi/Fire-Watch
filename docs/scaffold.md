@@ -25,7 +25,10 @@ Fire-Watch/
 │   └── interim/                cleaned and gridded Parquet files
 │
 ├── pipeline/                   Python (A and B)
-│   ├── requirements.txt        pinned Python dependencies
+│   ├── pyproject.toml          uv project and dependency groups
+│   ├── uv.lock                 locked Python dependency graph
+│   ├── .python-version         Python 3.12
+│   ├── requirements.txt        pinned export for non-uv installs
 │   ├── config.py               bbox, grid size, thresholds, years (to create)
 │   ├── ingest.py               A (to create)
 │   ├── clean.py                A (to create)
@@ -72,10 +75,9 @@ site needs them at deploy time.
 Python dependencies and the local environment:
 
 ```bash
-uv venv pipeline/.venv --python 3.12
-uv pip install --python pipeline/.venv/bin/python \
-  pandas numpy scipy pyarrow requests python-dotenv matplotlib
-uv pip freeze --python pipeline/.venv/bin/python > pipeline/requirements.txt
+cd pipeline
+uv sync --all-groups
+uv export --format requirements-txt --no-hashes --all-groups --no-emit-project -o requirements.txt
 ```
 
 React app and web dependencies:

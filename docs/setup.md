@@ -68,13 +68,16 @@ Products to pull (confirm names and availability on FIRMS):
 
 ```bash
 cd pipeline
-uv venv .venv
+uv sync --all-groups
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-uv pip install -r requirements.txt
 ```
 
-`requirements.txt` is pinned. Re-freeze it with
-`uv pip freeze > requirements.txt` after adding a dependency.
+`pyproject.toml` and `uv.lock` are the source of truth. After adding a
+dependency, regenerate the pinned export:
+
+```bash
+uv export --format requirements-txt --no-hashes --all-groups --no-emit-project -o requirements.txt
+```
 
 Planned entry points (run in order; each step reads the previous step's output):
 
