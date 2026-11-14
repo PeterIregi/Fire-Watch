@@ -14,7 +14,8 @@ A public link where a visitor can:
    and year.
 5. See unusual periods flagged.
 6. See the validation of the harmonization.
-7. Download a CSV for the selection.
+7. Download the selection as CSV (aggregate or capped raw detections) and the
+   calendar as a PNG.
 8. Read a short note on limitations.
 
 Plus: a short deck, a two-minute demo script and a backup recording.
@@ -49,6 +50,7 @@ Grouped by what gets built. No assignment to individuals.
 - [ ] Harmonized series (MODIS-equivalent hotspot counts)
 - [ ] Train/test validation, metrics and scatter plot
 - [ ] Export of the compact web data file
+- [ ] Per-year raw detection files for the raw CSV export
 
 ### B. Web app
 
@@ -61,7 +63,9 @@ Grouped by what gets built. No assignment to individuals.
 - [ ] Headline figures: current month against median, busiest month and year
 - [ ] Anomaly scoring in the browser and the unusual-periods list
 - [ ] Validation panel
-- [ ] CSV export for the selection
+- [ ] Aggregate CSV export for the selection
+- [ ] Capped raw-detection CSV export from the per-year files
+- [ ] Calendar PNG export
 - [ ] Limitations panel
 - [ ] Responsive layout and keyboard focus pass
 - [ ] Deploy to a public link

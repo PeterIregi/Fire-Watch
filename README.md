@@ -73,6 +73,7 @@ firewatch/
     system-design.md       Architecture, data model, harmonization method
     setup.md               Environment, data access, running the project
     development-plan.md    Scope, phases, checklists, risks
+    task-splitter.md       Workstreams and ownership for the four-person team
   pipeline/                Python: ingest, clean, grid, harmonize, export
   web/                     React + Leaflet + ECharts static app
   data/                    Cached downloads and exported data (git-ignored)
@@ -83,6 +84,7 @@ firewatch/
 - [System design](docs/system-design.md)
 - [Setup](docs/setup.md)
 - [Development plan](docs/development-plan.md)
+- [Task splitter](docs/task-splitter.md)
 
 ## Data and attribution
 
@@ -90,6 +92,12 @@ Hotspot data come from NASA FIRMS (Fire Information for Resource Management
 System), operated by NASA's Land, Atmosphere Near real-time Capability for EOS
 (LANCE) and the Earth Science Data and Information System (ESDIS). Please
 acknowledge NASA FIRMS in any use of this project.
+
+The project dataset was downloaded from the NASA Earthdata FIRMS website and
+is shared with the team here:
+[FireWatch data folder](https://drive.google.com/drive/folders/1ZDiTWoJ7GzbCfh4eIuKrKSxR8LBmLLj7?usp=sharing).
+The download is not committed to the repository; cached data stays under the
+git-ignored `data/` directory.
 
 ## Team
 

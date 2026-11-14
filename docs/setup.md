@@ -90,7 +90,7 @@ Expected outputs:
 | clean | `data/interim/clean_*.parquet` |
 | grid / aggregate | `data/interim/cell_month.parquet` |
 | harmonize | calibration coefficients, validation metrics, `validation_scatter.png` |
-| export | `web/public/data/firewatch.json.gz` |
+| export | `web/public/data/firewatch.json.gz` and `web/public/data/detections/YYYY.json.gz` |
 
 Sanity checks after each step:
 

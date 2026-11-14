@@ -41,7 +41,7 @@ precomputed aggregates.
  [5] Harmonize     pipeline/harmonize.py    calibrate VIIRS -> MODIS-equivalent
         |             + validate             held-out test, metrics, scatter
         v
- [6] Export        pipeline/export.py       compact gzipped JSON for the web app
+ [6] Export        pipeline/export.py       compact gzipped JSON + per-year detections
         |
         v
  Static web app (web/)
@@ -201,7 +201,10 @@ detections are omitted).
     "bbox": [29.3, -11.8, 40.5, -0.9],
     "months": ["2000-01", "2000-02", "..."],
     "filters": {"modis_min_conf": 30, "viirs_drop": ["low"]},
-    "calibration": {"overlap": "2012-2025", "k_by_season": {"dry": 0.0, "wet": 0.0}},
+    "calibration": {
+      "overlap": "2012-2025", "train": "2012-2018", "test": "2019-2025",
+      "k_by_season": {"dry": 0.0, "wet": 0.0}
+    },
     "validation": {"pearson": 0.0, "bias": 0.0, "mae": 0.0, "scatter": [[0, 0]]}
   },
   "cells": [{"id": "-6.50_35.00", "lat": -6.5, "lon": 35.0}],
@@ -218,6 +221,33 @@ cells. If the file is too large: aggregate to coarser time steps for the
 calendar, use a coarser grid, or split the file by year and load on demand.
 Decide after measuring the real file size.
 
+### 5.3 Raw detection files (for the raw CSV export)
+
+The aggregate file is enough for the calendar and charts, but the challenge
+also asks for a CSV of hotspots detected during a search. The pipeline writes
+one gzipped file per year of quality-filtered detections, loaded only when the
+user requests a raw export:
+
+`web/public/data/detections/YYYY.json.gz`
+
+| column | type | description |
+|---|---|---|
+| sensor | string | `MODIS` or `VIIRS` |
+| satellite | string | Terra, Aqua, Suomi NPP, NOAA-20, ... |
+| acq_date | date | detection date |
+| acq_time | string | HHMM UTC |
+| lat, lon | float | detection location |
+| confidence | int or string | MODIS 0-100, VIIRS low / nominal / high |
+| frp | float | fire radiative power (MW) |
+| daynight | string | D or N |
+| cell_id | string | containing 0.25 degree cell |
+
+Files are much smaller than the full record because they contain only
+quality-filtered detections for Tanzania. The browser fetches the years inside
+the selected date range, clips to the AOI, and applies the row cap in section
+6.3. If a year's file is still too large, coarsen the export or split it by
+month.
+
 ## 6. Web application
 
 ### 6.1 Modules
@@ -231,7 +261,7 @@ Decide after measuring the real file size.
 | `kpis` | Current month against median, busiest month, busiest year |
 | `anomalies` | Unusual-period list; clicking an item highlights it on the calendar |
 | `validation` | Scatter, correlation, bias, and a short plain-language reading |
-| `export` | Builds the CSV for the current selection and triggers a download |
+| `export` | Builds the aggregate CSV or capped raw-detection CSV for the current selection, exports the calendar as PNG, and triggers downloads |
 | `limits` | Short limitations note |
 
 ### 6.2 Selection logic
@@ -240,17 +270,32 @@ Decide after measuring the real file size.
 2. A cell is in the selection if its center lies inside the rectangle.
 3. The monthly series for the selection is the per-month sum over those cells.
 4. Date range clips the series. KPIs and anomalies recompute.
-5. All of this runs in the browser. No network call after the initial load.
+5. All calendar, chart and KPI computation runs in the browser. The only
+   later network calls are the per-year detection files fetched on demand for
+   a raw CSV export.
 
-### 6.3 CSV export
+### 6.3 Downloads
 
-Columns: `cell_id, lat, lon, month, modis_hotspots, modis_fire_days,
-viirs_hotspots, viirs_fire_days, harmonized`.
+Three downloads are offered for the current selection.
 
-This is the harmonized aggregate for the selection, **not raw hotspot rows**.
-Exporting raw detections for large selections is not realistic in a static app;
-production would query raw detections server-side. The export is labelled
-accordingly.
+**Aggregate CSV (always available).** Columns: `cell_id, lat, lon, month,
+modis_hotspots, modis_fire_days, viirs_hotspots, viirs_fire_days,
+harmonized`. This is the harmonized cell-month table for the selection, not
+raw hotspot rows. It is named `firewatch_aggregate_<start>_<end>.csv` and
+labelled accordingly.
+
+**Raw-detection CSV (capped).** Quality-filtered hotspot rows from section
+5.3 for the selected years and AOI, with the FIRMS attributes. Because the app
+is static, the export is capped at 50,000 rows. Above the cap the app explains
+the limit, states how many rows matched, and offers the aggregate CSV instead.
+The file is named `firewatch_hotspots_<start>_<end>.csv` and labelled as raw
+detections.
+
+**Calendar PNG.** ECharts `getDataURL` saves the current calendar view as
+`firewatch_calendar.png`, so the visualization itself can be downloaded, not
+only its numbers.
+
+Production would lift the row cap by querying raw detections server-side.
 
 ### 6.4 Accessibility
 
@@ -296,6 +341,6 @@ layout are still to be designed.
 | Precomputed static JSON | PostGIS with a tile or API layer |
 | Tanzania only | Global coverage, user-defined regions |
 | Archive download | Scheduled FIRMS ingestion, near-real-time updates |
-| Aggregate CSV | Raw-detection export from the server |
+| Aggregate CSV plus capped raw-detection CSV | Uncapped raw-detection export from the server |
 | Seasonal calibration | Calibration per land-cover class and region, with uncertainty bands |
 | None | Alerts when an area departs from its baseline |
