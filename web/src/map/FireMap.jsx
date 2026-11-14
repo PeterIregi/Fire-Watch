@@ -7,20 +7,28 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-draw'
 
 import eastAfrica from './data/east-africa.geojson?raw'
+import world from './data/world.geojson?raw'
 import { useFireWatch } from '../store/useFireWatch.js'
 import { getCellActivity } from '../store/selection.js'
 
-const EAST_AFRICA_VIEW = [
-  [-13.5, 25.5],
-  [3.5, 43.5],
+const WORLD_VIEW = [
+  [-60, -180],
+  [85, 180],
 ]
-
 const COUNTRY_STYLE = {
   color: '#536577',
   weight: 1,
   opacity: 0.8,
   fillColor: '#1b2936',
-  fillOpacity: 0.9,
+  fillOpacity: 0,
+}
+
+const WORLD_COUNTRY_STYLE = {
+  color: '#35434d',
+  weight: 0.55,
+  opacity: 0.8,
+  fillColor: '#17232b',
+  fillOpacity: 0,
 }
 
 const TANZANIA_STYLE = {
@@ -28,7 +36,7 @@ const TANZANIA_STYLE = {
   weight: 1.8,
   opacity: 1,
   fillColor: '#344b40',
-  fillOpacity: 0.95,
+  fillOpacity: 0.08,
 }
 
 const SELECTION_STYLE = {
@@ -110,13 +118,28 @@ const hasActivity = activityCells.some(
       attributionControl: true,
       scrollWheelZoom: true,
       preferCanvas: true,
-      minZoom: 4,
+      minZoom: 2,
       maxZoom: 12,
     })
+
+    const satelliteLayer = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {
+    attribution:
+      'Tiles © Esri — Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community',
+    maxZoom: 19,
+  },
+)
+
+satelliteLayer.addTo(map)
 
     mapRef.current = map
 
     L.control.zoom({ position: 'topright' }).addTo(map)
+
+L.geoJSON(JSON.parse(world), {
+  style: WORLD_COUNTRY_STYLE,
+}).addTo(map)
 
     L.geoJSON(JSON.parse(eastAfrica), {
       style: getCountryStyle,
@@ -149,7 +172,7 @@ const hasActivity = activityCells.some(
       'Boundaries: Natural Earth / geo-countries',
     )
 
-    map.fitBounds(EAST_AFRICA_VIEW, {
+    map.fitBounds(WORLD_VIEW, {
       padding: [20, 20],
     })
 
