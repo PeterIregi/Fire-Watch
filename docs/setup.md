@@ -10,7 +10,7 @@ and may change names. Update this file as the real commands settle.
 - [uv](https://docs.astral.sh/uv/) for the Python environment
 - Node.js 22 LTS or newer and npm (Vite 8 requires 20.19+ or 22.12+)
 - Git
-- A free NASA Earthdata / FIRMS account and a FIRMS **MAP_KEY**
+- Optional: a FIRMS **MAP_KEY** only if you need to refresh or extend the download
 - Disk space: the raw download is about 0.7 GB; a few GB in total covers
   intermediate files
 
@@ -31,8 +31,8 @@ repository; see [scaffold.md](scaffold.md) for the full layout. The root
 
 **The team has already downloaded the data** (about 0.7 GB, shared through the
 Drive folder linked in the README). Put the CSVs under `data/raw/modis/` and
-`data/raw/viirs/`. The ingest step reads every `*.csv` in those folders, so file
-names do not matter. A MAP_KEY is only needed to refresh or extend the data;
+`data/raw/viirs/`. The ingest step reads the `fire_archive_*.csv` files and
+ignores the NRT files. A MAP_KEY is only needed to refresh or extend the data;
 the rest of this section applies only if you need to download again.
 
 1. Request a MAP_KEY on the FIRMS website (look for the Area API / MAP_KEY
@@ -40,10 +40,10 @@ the rest of this section applies only if you need to download again.
 2. Store it as an environment variable, never in the repository:
 
 ```bash
-cp .env.example .env     # then edit .env
-# .env
-FIRMS_MAP_KEY=your_key_here
+export FIRMS_MAP_KEY=your_key_here
 ```
+
+The current archive-only build does not require a MAP_KEY or an `.env` file.
 
 3. Test a small request before any bulk download.
 

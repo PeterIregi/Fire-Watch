@@ -14,7 +14,6 @@ commit empty stubs. Empty directories that must survive Git are tracked with
 Fire-Watch/
 ├── README.md
 ├── .gitignore                  data/, .venv/, node_modules/, .env
-├── .env.example
 ├── docs/                       existing docs
 │   ├── scaffold.md             this file
 │   └── figures/                validation scatter, exported images (B)
