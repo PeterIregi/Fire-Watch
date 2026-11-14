@@ -3,14 +3,36 @@ import { useFireWatch } from './store/useFireWatch.js'
 import FireMap from './map/FireMap.jsx'
 
 function App() {
-  const {
-    dataset,
-    loading,
-    error,
-    selection,
-    selectedCells,
-    reload,
-  } = useFireWatch()
+ const {
+  dataset,
+  loading,
+  error,
+  setSource,
+  setDateRange,
+  selection,
+  selectedCells,
+  reload,
+} = useFireWatch()
+
+const months = dataset?.meta.months ?? []
+
+function handleStartChange(start) {
+  setDateRange({
+    start,
+    end: start > selection.dateRange.end
+      ? start
+      : selection.dateRange.end,
+  })
+}
+
+function handleEndChange(end) {
+  setDateRange({
+    start: end < selection.dateRange.start
+      ? end
+      : selection.dateRange.start,
+    end,
+  })
+}
 
   return (
     <main className="app-shell">
@@ -88,18 +110,65 @@ function App() {
             </section>
 
             <section className="workspace">
-              <div className="workspace-heading">
-                <div>
-                  <p className="eyebrow">EXPLORATION</p>
-                  <h2>Fire activity map</h2>
-                </div>
-                <span className="source-label">
-                  {selection.source.toUpperCase()}
-                </span>
-              </div>
+             <div className="workspace-heading">
+  <div>
+    <p className="eyebrow">EXPLORATION</p>
+    <h2>Fire activity map</h2>
+  </div>
 
+  <span className="source-label">
+    {selection.source.toUpperCase()}
+  </span>
+</div>
 
-              <FireMap />
+<div className="map-controls">
+  <div className="source-control">
+    <span className="control-label">DATA SOURCE</span>
+
+    <div className="source-options">
+      {['modis', 'viirs', 'harmonized'].map((source) => (
+        <button
+          key={source}
+          type="button"
+          className={selection.source === source ? 'active' : ''}
+          aria-pressed={selection.source === source}
+          onClick={() => setSource(source)}
+        >
+          {source.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div className="date-control">
+    <label>
+      <span className="control-label">FROM</span>
+      <select
+        value={selection.dateRange.start}
+        onChange={(event) => handleStartChange(event.target.value)}
+      >
+        {months.map((month) => (
+          <option key={month} value={month}>{month}</option>
+        ))}
+      </select>
+    </label>
+
+    <label>
+      <span className="control-label">TO</span>
+      <select
+        value={selection.dateRange.end}
+        onChange={(event) => handleEndChange(event.target.value)}
+      >
+        {months.map((month) => (
+          <option key={month} value={month}>{month}</option>
+        ))}
+      </select>
+    </label>
+  </div>
+</div>
+
+<FireMap />
+
               
             </section>
 
