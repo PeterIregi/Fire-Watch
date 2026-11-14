@@ -1,5 +1,6 @@
 
 import { useFireWatch } from './store/useFireWatch.js'
+import FireMap from './map/FireMap.jsx'
 
 function App() {
   const {
@@ -97,17 +98,9 @@ function App() {
                 </span>
               </div>
 
-              <div className="map-placeholder">
-                <div className="placeholder-content">
-                  <span className="placeholder-icon">◎</span>
-                  <h3>Map workspace</h3>
-                  <p>
-                    Select an area on the map to explore fire activity
-                    across the region.
-                  </p>
-                  <small>Interactive map coming next</small>
-                </div>
-              </div>
+
+              <FireMap />
+              
             </section>
 
             <section className="analytics-placeholder">
