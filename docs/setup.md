@@ -89,6 +89,7 @@ python grid.py       --grid 0.25
 python aggregate.py
 python harmonize.py  --train 2012-2018 --test 2019-2025
 python export.py     --out ../web/public/data/firewatch.json.gz
+python detections.py --out-dir ../web/public/data/detections
 ```
 
 Expected outputs:

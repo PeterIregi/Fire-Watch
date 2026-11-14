@@ -37,7 +37,8 @@ Fire-Watch/
 │   ├── harmonize.py            B (to create) -> cell_month.parquet
 │   ├── validate.py             B (to create) -> metrics, scatter data
 │   ├── calibration.json        B (to create)
-│   ├── export.py               A (to create) -> web/public/data/
+│   ├── export.py               A -> web/public/data/firewatch.json.gz
+│   ├── detections.py           A -> web/public/data/detections/YYYY.json.gz
 │   └── tests/                  small sanity checks per step
 │
 ├── web/                        React + Vite (C and D)
