@@ -5,6 +5,7 @@ import {
   selectCellsInBounds,
   aggregateMonthlySeries,
   getSourceSeries,
+    getCellActivity,
 } from './selection.js'
 
 describe('selectCellsInBounds', () => {
@@ -135,6 +136,72 @@ describe('getSourceSeries', () => {
   it('rejects unknown sources', () => {
     assert.throws(
       () => getSourceSeries([], 'unknown'),
+      /Unknown data source/,
+    )
+  })
+})
+
+
+describe('getCellActivity', () => {
+  const dataset = {
+    meta: {
+      months: ['2000-01', '2000-02', '2000-03'],
+    },
+    data: {
+      'cell-a': [
+        [0, 10, 4, 20, 5, 12],
+        [1, 15, 6, 30, 8, 18],
+        [2, 5, 2, 10, 3, 6],
+      ],
+    },
+  }
+
+  const dateRange = {
+    start: '2000-01',
+    end: '2000-03',
+  }
+
+  it('calculates MODIS hotspot activity', () => {
+    assert.equal(
+      getCellActivity(dataset, 'cell-a', 'modis', dateRange),
+      30,
+    )
+  })
+
+  it('calculates VIIRS hotspot activity', () => {
+    assert.equal(
+      getCellActivity(dataset, 'cell-a', 'viirs', dateRange),
+      60,
+    )
+  })
+
+  it('calculates harmonized activity', () => {
+    assert.equal(
+      getCellActivity(dataset, 'cell-a', 'harmonized', dateRange),
+      36,
+    )
+  })
+
+  it('respects the selected date range', () => {
+    assert.equal(
+      getCellActivity(dataset, 'cell-a', 'modis', {
+        start: '2000-02',
+        end: '2000-02',
+      }),
+      15,
+    )
+  })
+
+  it('returns zero for cells without records', () => {
+    assert.equal(
+      getCellActivity(dataset, 'missing-cell', 'modis', dateRange),
+      0,
+    )
+  })
+
+  it('rejects unknown sources', () => {
+    assert.throws(
+      () => getCellActivity(dataset, 'cell-a', 'unknown', dateRange),
       /Unknown data source/,
     )
   })
