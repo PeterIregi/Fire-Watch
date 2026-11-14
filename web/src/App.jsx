@@ -1,121 +1,135 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+
+import { useFireWatch } from './store/useFireWatch.js'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {
+    dataset,
+    loading,
+    error,
+    selection,
+    selectedCells,
+    reload,
+  } = useFireWatch()
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="app-shell">
+      <header className="app-header">
+        <a className="brand" href="/" aria-label="FireWatch home">
+          <span className="brand-mark">F</span>
+          <span>
+            <strong>FireWatch</strong>
+            <small>East Africa · Fire intelligence</small>
+          </span>
+        </a>
+
+        <div className="header-status">
+          <span className={`status-dot ${loading ? 'loading' : error ? 'error' : 'ready'}`} />
+          <span>
+            {loading ? 'Loading data' : error ? 'Data unavailable' : 'System ready'}
+          </span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+      </header>
+
+      <section className="dashboard">
+        <div className="dashboard-heading">
+          <div>
+            <p className="eyebrow">TANZANIA · HISTORICAL FIRE ACTIVITY</p>
+            <h1>Understand where fire happens.</h1>
+            <p className="intro">
+              Explore historical fire activity across Tanzania using harmonized
+              MODIS and VIIRS satellite observations.
+            </p>
+          </div>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        {error && (
+          <section className="feedback-panel error-panel" role="alert">
+            <div>
+              <h2>We couldn't load the dataset</h2>
+              <p>{error}</p>
+            </div>
+            <button type="button" onClick={reload}>
+              Try again
+            </button>
+          </section>
+        )}
+
+        {loading && (
+          <section className="feedback-panel loading-panel" aria-live="polite">
+            <span className="loader" />
+            <div>
+              <h2>Preparing FireWatch</h2>
+              <p>Loading and validating the historical fire dataset...</p>
+            </div>
+          </section>
+        )}
+
+        {dataset && !loading && !error && (
+          <>
+            <section className="overview">
+              <article className="metric-card">
+                <span>GRID CELLS</span>
+                <strong>{dataset.cells.length.toLocaleString()}</strong>
+                <small>Across the study area</small>
+              </article>
+
+              <article className="metric-card">
+                <span>SELECTED CELLS</span>
+                <strong>{selectedCells.length.toLocaleString()}</strong>
+                <small>Within current area of interest</small>
+              </article>
+
+              <article className="metric-card">
+                <span>TIME COVERAGE</span>
+                <strong>{dataset.meta.months.length.toLocaleString()}</strong>
+                <small>Monthly observations</small>
+              </article>
+            </section>
+
+            <section className="workspace">
+              <div className="workspace-heading">
+                <div>
+                  <p className="eyebrow">EXPLORATION</p>
+                  <h2>Fire activity map</h2>
+                </div>
+                <span className="source-label">
+                  {selection.source.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="map-placeholder">
+                <div className="placeholder-content">
+                  <span className="placeholder-icon">◎</span>
+                  <h3>Map workspace</h3>
+                  <p>
+                    Select an area on the map to explore fire activity
+                    across the region.
+                  </p>
+                  <small>Interactive map coming next</small>
+                </div>
+              </div>
+            </section>
+
+            <section className="analytics-placeholder">
+              <div>
+                <p className="eyebrow">HISTORICAL ANALYSIS</p>
+                <h2>Monthly fire activity</h2>
+                <p>
+                  Select an area to calculate its monthly fire activity
+                  timeline.
+                </p>
+              </div>
+              <span className="analytics-tag">Analytics workspace</span>
+            </section>
+          </>
+        )}
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <footer className="app-footer">
+        <span>FireWatch · Team Tazama</span>
+        <span>Satellite detections are not fire boundaries.</span>
+      </footer>
+    </main>
   )
 }
 
