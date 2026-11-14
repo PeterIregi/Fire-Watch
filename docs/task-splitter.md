@@ -10,10 +10,10 @@ built and when) and the [system design](system-design.md) (how the pieces fit).
 
 | Domain | Owner | Primary output | Owned files / folders |
 |---|---|---|---|
-| A. Data engineering | _to fill_ | Clean, gridded, aggregated data and every file the web app loads | `pipeline/ingest.py`, `clean.py`, `grid.py`, `aggregate.py`, `export.py`, `data/` |
-| B. Fire science and validation | _to fill_ | Calibration, harmonized series, held-out validation, method text | `pipeline/harmonize.py`, `validate.py`, `calibration.json`, validation figures and numbers |
-| C. Web app core | _to fill_ | Map, area selection, date range, data store, app shell | `web/src/map/`, `web/src/store/`, `web/src/App.jsx`, routing and layout |
-| D. Analytics and delivery | _to fill_ | Calendar, charts, KPIs, anomalies, downloads, accessibility, deploy, submission | `web/src/calendar/`, `charts/`, `kpis/`, `anomalies/`, `export/`, `deploy/` |
+| A. Data engineering | _Favor_ | Clean, gridded, aggregated data and every file the web app loads | `pipeline/ingest.py`, `clean.py`, `grid.py`, `aggregate.py`, `export.py`, `data/` |
+| B. Fire science and validation | _Silas_ | Calibration, harmonized series, held-out validation, method text | `pipeline/harmonize.py`, `validate.py`, `calibration.json`, validation figures and numbers |
+| C. Web app core | _Geremi_ | Map, area selection, date range, data store, app shell | `web/src/map/`, `web/src/store/`, `web/src/App.jsx`, routing and layout |
+| D. Analytics and delivery | _Peter_ | Calendar, charts, KPIs, anomalies, downloads, accessibility, deploy, submission | `web/src/calendar/`, `charts/`, `kpis/`, `anomalies/`, `export/`, `deploy/` |
 
 Each person owns their domain end to end: implementation, tests or sanity
 checks, and the matching part of the docs.
