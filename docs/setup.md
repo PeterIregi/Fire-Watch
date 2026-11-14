@@ -6,8 +6,9 @@ and may change names. Update this file as the real commands settle.
 
 ## 1. Prerequisites
 
-- Python 3.10 or newer
-- Node.js 18 or newer and npm
+- Python 3.12 (3.10 or newer works; the scaffold environment uses 3.12)
+- [uv](https://docs.astral.sh/uv/) for the Python environment
+- Node.js 22 LTS or newer and npm (Vite 8 requires 20.19+ or 22.12+)
 - Git
 - A free NASA Earthdata / FIRMS account and a FIRMS **MAP_KEY**
 - Disk space: the raw download is about 0.7 GB; a few GB in total covers
@@ -18,17 +19,13 @@ and may change names. Update this file as the real commands settle.
 ```bash
 git clone <repo-url> firewatch
 cd firewatch
-mkdir -p pipeline web data/raw data/interim data/export
+mkdir -p data/raw/modis data/raw/viirs data/interim
 ```
 
-Add a `.gitignore` containing at least:
-
-```
-data/
-.venv/
-node_modules/
-.env
-```
+The `pipeline/`, `web/`, and `.github/` scaffolds are already in the
+repository; see [scaffold.md](scaffold.md) for the full layout. The root
+`.gitignore` already excludes `data/`, `.venv/`, `node_modules/`, `dist/`, and
+`.env`.
 
 ## 3. FIRMS access
 
@@ -71,11 +68,13 @@ Products to pull (confirm names and availability on FIRMS):
 
 ```bash
 cd pipeline
-python -m venv .venv
+uv venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install pandas numpy scipy pyarrow requests python-dotenv matplotlib
-pip freeze > requirements.txt
+uv pip install -r requirements.txt
 ```
+
+`requirements.txt` is pinned. Re-freeze it with
+`uv pip freeze > requirements.txt` after adding a dependency.
 
 Planned entry points (run in order; each step reads the previous step's output):
 
@@ -114,11 +113,12 @@ Develop against **one year first**, then run the full range.
 
 ```bash
 cd web
-npm create vite@latest . -- --template react
-npm install leaflet leaflet-draw echarts
-npm install            # restores everything
+npm ci                 # clean install from package-lock.json
 npm run dev            # http://localhost:5173
 ```
+
+The Vite app and `leaflet`, `leaflet-draw`, and `echarts` are already
+scaffolded. Replace the demo `App.jsx` with the FireWatch shell.
 
 While the pipeline is unfinished, develop with a small dummy file at
 `web/public/data/firewatch.json.gz` that follows the schema in
@@ -134,8 +134,10 @@ npm run build          # outputs web/dist
 
 Owned by the web core domain. Others do not change hosting settings.
 
-- **GitHub Pages:** publish `web/dist`. Set the Vite `base` option to the
-  repository path.
+- **GitHub Pages:** `.github/workflows/deploy.yml` builds and publishes
+  `web/dist` on every push to `main`. It sets `VITE_BASE` to the repository
+  path, which `vite.config.js` reads. Enable Pages with GitHub Actions as the
+  source once.
 - **Vercel:** import the repository, set the root directory to `web`, build
   command `npm run build`, output `dist`.
 
