@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import L from 'leaflet'
 
 import 'leaflet/dist/leaflet.css'
@@ -8,6 +8,7 @@ import 'leaflet-draw'
 
 import eastAfrica from './data/east-africa.geojson?raw'
 import { useFireWatch } from '../store/useFireWatch.js'
+import { getCellActivity } from '../store/selection.js'
 
 const EAST_AFRICA_VIEW = [
   [-13.5, 25.5],
@@ -39,19 +40,66 @@ const SELECTION_STYLE = {
   dashArray: '6 5',
 }
 
+const FIRE_COLORS = [
+  '#ffc766',
+  '#ffad42',
+  '#ff872e',
+  '#f45b25',
+  '#d93622',
+]
+
 function getCountryStyle(feature) {
   const code = feature.properties?.['ISO3166-1-Alpha-3']
 
   return code === 'TZA' ? TANZANIA_STYLE : COUNTRY_STYLE
 }
 
+function getFireColor(value, maximum) {
+  if (value <= 0 || maximum <= 0) return null
+
+  const intensity = value / maximum
+
+  if (intensity <= 0.2) return FIRE_COLORS[0]
+  if (intensity <= 0.4) return FIRE_COLORS[1]
+  if (intensity <= 0.6) return FIRE_COLORS[2]
+  if (intensity <= 0.8) return FIRE_COLORS[3]
+
+  return FIRE_COLORS[4]
+}
+
 function FireMap() {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const selectionLayerRef = useRef(null)
+  const activityLayerRef = useRef(null)
 
-  const { selection, setAOI } = useFireWatch()
-  const aoi = selection.aoi
+  const {
+    dataset,
+    selection,
+    setAOI,
+  } = useFireWatch()
+
+  const { aoi, source, dateRange } = selection
+
+ const activityCells = useMemo(() => {
+  if (!dataset || !dateRange.start || !dateRange.end) {
+    return []
+  }
+
+  return dataset.cells.map((cell) => ({
+    ...cell,
+    activity: getCellActivity(
+      dataset,
+      cell.id,
+      source,
+      dateRange,
+    ),
+  }))
+}, [dataset, source, dateRange])
+
+const hasActivity = activityCells.some(
+  (cell) => cell.activity > 0,
+)
 
   // Initialise the map once.
   useEffect(() => {
@@ -144,10 +192,64 @@ function FireMap() {
       map.remove()
       mapRef.current = null
       selectionLayerRef.current = null
+      activityLayerRef.current = null
     }
   }, [setAOI])
 
-  // Keep the visible rectangle synchronised with shared selection state.
+  // Render the fire activity grid.
+  useEffect(() => {
+    const map = mapRef.current
+
+    if (!map || !dataset) return
+
+    if (activityLayerRef.current) {
+      map.removeLayer(activityLayerRef.current)
+    }
+
+    const maximum = Math.max(
+      0,
+      ...activityCells.map((cell) => cell.activity),
+    )
+
+    const activityLayer = L.layerGroup()
+
+    for (const cell of activityCells) {
+      const color = getFireColor(cell.activity, maximum)
+
+      if (!color) continue
+
+      const bounds = [
+        [cell.lat, cell.lon],
+        [
+          cell.lat + dataset.meta.grid_deg,
+          cell.lon + dataset.meta.grid_deg,
+        ],
+      ]
+
+      const rectangle = L.rectangle(bounds, {
+        stroke: true,
+        color: '#f8b45b',
+        weight: 0.45,
+        opacity: 0.45,
+        fillColor: color,
+        fillOpacity: 0.68,
+        interactive: true,
+      })
+
+      rectangle.bindTooltip(
+        `<strong>${cell.id}</strong><br/>` +
+        `Activity: ${cell.activity.toLocaleString()}<br/>` +
+        `Source: ${source.toUpperCase()}`,
+      )
+
+      rectangle.addTo(activityLayer)
+    }
+
+    activityLayer.addTo(map)
+    activityLayerRef.current = activityLayer
+  }, [dataset, activityCells, source])
+
+  // Synchronise the visible AOI rectangle.
   useEffect(() => {
     const map = mapRef.current
 
@@ -172,14 +274,46 @@ function FireMap() {
     selectionLayerRef.current = rectangle
   }, [aoi])
 
-  return (
+ return (
+  <div className="firewatch-map-shell">
     <div
       ref={containerRef}
       className="firewatch-map"
       role="application"
       aria-label="Interactive map of Tanzania and surrounding countries"
     />
-  )
+
+    {hasActivity && (
+      <aside
+        className="fire-legend"
+        aria-label="Relative fire activity legend"
+      >
+        <div className="legend-heading">
+          <span className="legend-indicator" />
+          <strong>FIRE ACTIVITY</strong>
+        </div>
+
+        <p>Relative intensity</p>
+
+        <div className="legend-scale">
+          {FIRE_COLORS.map((color, index) => (
+            <span
+              key={color}
+              className="legend-swatch"
+              style={{ backgroundColor: color }}
+              aria-label={`Intensity level ${index + 1}`}
+            />
+          ))}
+        </div>
+
+        <div className="legend-labels">
+          <span>LOW</span>
+          <span>HIGH</span>
+        </div>
+      </aside>
+    )}
+  </div>
+)
 }
 
 export default FireMap
