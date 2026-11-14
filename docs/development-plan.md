@@ -43,14 +43,14 @@ Grouped by what gets built. No assignment to individuals.
 
 - [ ] FIRMS MAP_KEY and a working test request
 - [ ] Ingest script with per-year caching (MODIS from 2000, VIIRS from 2012)
-- [ ] Cleaning: bounding-box clip, confidence filters, deduplication
+- [ ] Cleaning: bounding-box clip, confidence filters, VIIRS type filter, deduplication
 - [ ] Gridding to 0.25 degrees and fire-day counting
 - [ ] Monthly aggregation per cell and sensor
 - [ ] Calibration in the 2012-onward overlap (per season)
 - [ ] Harmonized series (MODIS-equivalent hotspot counts)
 - [ ] Train/test validation, metrics and scatter plot
 - [ ] Export of the compact web data file
-- [ ] Per-year raw detection files for the raw CSV export
+- [ ] Per-year raw detection files for the raw CSV export (should-have)
 
 ### B. Web app
 
@@ -64,7 +64,7 @@ Grouped by what gets built. No assignment to individuals.
 - [ ] Anomaly scoring in the browser and the unusual-periods list
 - [ ] Validation panel
 - [ ] Aggregate CSV export for the selection
-- [ ] Capped raw-detection CSV export from the per-year files
+- [ ] Capped raw-detection CSV export from the per-year files (should-have, after the aggregate CSV)
 - [ ] Calendar PNG export
 - [ ] Limitations panel
 - [ ] Responsive layout and keyboard focus pass
@@ -91,7 +91,7 @@ reading), and do the main build and submission during the event.
 - Register for a FIRMS MAP_KEY and test a small request.
 - Confirm which MODIS and VIIRS products and years FIRMS offers for the
   Tanzania box, and note request limits.
-- Download and cache MODIS from 2000 first (fewer rows), then VIIRS from 2012.
+- The data is already downloaded (about 0.7 GB, shared on Drive). Inspect it: date range, and distinct `satellite`, `confidence` and VIIRS `type` values per file.
 - Run cleaning and gridding on one year of each sensor and sanity-check counts.
 - Prototype the calibration on the overlap and look at the scatter. This is
   the riskiest step.
@@ -112,7 +112,8 @@ reading), and do the main build and submission during the event.
 ### Day 2 (November 15): the product is convincing
 
 - Comparison chart, validation panel, limitations panel.
-- Headline figures and CSV download.
+- Headline figures and the aggregate CSV download.
+- Capped raw-detection CSV only if everything above works.
 - Anomaly list. Coordinate entry if time allows.
 - Deploy, test on a second device.
 - Deck, demo rehearsal, backup recording.
@@ -121,20 +122,20 @@ reading), and do the main build and submission during the event.
 ## 5. Cut order if time runs short
 
 1. Satellite basemap toggle
-2. Fire-season and critical-period highlighting
-3. Quick-select regions
-4. Coordinate entry
-5. Anomaly list
+2. Capped raw-detection CSV and the per-year detection files
+3. Fire-season and critical-period highlighting
+4. Quick-select regions
+5. Coordinate entry
+6. Anomaly list
 
-**Never cut:** the calendar, the harmonization, the validation panel, the CSV
-download.
+**Never cut:** the calendar, the harmonization, the validation panel, the aggregate CSV download.
 
 ## 6. Risks
 
 | Risk | Mitigation |
 |---|---|
-| FIRMS limits slow the download | Start now, cache every chunk, use the archive tool for bulk requests |
-| MODIS from 2000 makes the download large | Pull MODIS first, in per-year files |
+| A later data refresh hits FIRMS limits | Not needed for the prototype; the data is already downloaded |
+| Pooling later VIIRS satellites bends the series | Calibrate with Suomi NPP only (system design section 4.4) |
 | Web data file too large | Coarser grid or time step, split by year |
 | Calibration looks noisy | Pool into larger blocks, calibrate per season, report uncertainty |
 | Overlap agreement lower than hoped | Present the held-out result honestly; a measured limitation beats an unverified claim |
@@ -164,7 +165,7 @@ download.
 - Grid size: 0.25 or 0.1 degrees (depends on file size).
 - Calendar resolution: monthly only, or monthly plus day-of-year.
 - Anomaly threshold: 3.5 robust z-score by default.
-- Whether to include NOAA-20 and NOAA-21 VIIRS.
+- NOAA-20 and NOAA-21 VIIRS stay out of the calibrated series (single-satellite rule). Decide only whether to keep them in the raw-detection files.
 - License.
 
 ## 9. Resources to read

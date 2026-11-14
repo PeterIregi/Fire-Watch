@@ -10,8 +10,8 @@ and may change names. Update this file as the real commands settle.
 - Node.js 18 or newer and npm
 - Git
 - A free NASA Earthdata / FIRMS account and a FIRMS **MAP_KEY**
-- Disk space for cached downloads (a few GB to be safe; measure the real
-  figure after the first year of data)
+- Disk space: the raw download is about 0.7 GB; a few GB in total covers
+  intermediate files
 
 ## 2. Repository
 
@@ -31,6 +31,12 @@ node_modules/
 ```
 
 ## 3. FIRMS access
+
+**The team has already downloaded the data** (about 0.7 GB, shared through the
+Drive folder linked in the README). Put the CSVs under `data/raw/modis/` and
+`data/raw/viirs/`. The ingest step reads every `*.csv` in those folders, so file
+names do not matter. A MAP_KEY is only needed to refresh or extend the data;
+the rest of this section applies only if you need to download again.
 
 1. Request a MAP_KEY on the FIRMS website (look for the Area API / MAP_KEY
    registration page).
@@ -74,7 +80,7 @@ pip freeze > requirements.txt
 Planned entry points (run in order; each step reads the previous step's output):
 
 ```bash
-python ingest.py     --bbox 29.3 -11.8 40.5 -0.9 --start 2000 --end 2026
+python ingest.py     --raw-dir ../data/raw --bbox 29.3 -11.8 40.5 -0.9
 python clean.py      --modis-min-conf 30 --viirs-drop low
 python grid.py       --grid 0.25
 python aggregate.py
@@ -98,6 +104,9 @@ Sanity checks after each step:
   May to October).
 - Cell count is in the low thousands, not millions.
 - MODIS and VIIRS monthly totals move together in the overlap period.
+- Before cleaning, print the distinct `satellite`, `confidence` and (VIIRS)
+  `type` values and the date range of each file, and confirm which VIIRS
+  satellites are present (see system design section 4.4).
 
 Develop against **one year first**, then run the full range.
 
@@ -122,6 +131,8 @@ npm run build          # outputs web/dist
 ```
 
 ## 6. Deploy
+
+Owned by the web core domain. Others do not change hosting settings.
 
 - **GitHub Pages:** publish `web/dist`. Set the Vite `base` option to the
   repository path.

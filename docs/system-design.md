@@ -73,13 +73,29 @@ Mafia.
 
 ### 4.1 Cleaning
 
+- Read the FIRMS CSVs with only the columns needed (`usecols`) and explicit
+  dtypes. The full download is about 0.7 GB, which fits in memory on a normal
+  laptop, but unused columns are still wasted work.
 - Keep only rows inside the bounding box.
+- Parse defensively, because the two files differ:
+  - `acq_time` is HHMM and can lose its leading zeros (`35` means 00:35).
+    Zero-pad to four digits before parsing.
+  - `confidence` is numeric (0-100) in the MODIS file and a category (low,
+    nominal, high) in the VIIRS file. The VIIRS values may be spelled out or
+    abbreviated (`l`, `n`, `h`). Accept both.
 - Drop low-confidence detections: MODIS confidence below a threshold
-  (default 30), VIIRS confidence `low`. Thresholds are parameters recorded in
+  (default 30), VIIRS confidence low. Thresholds are parameters recorded in
   the output metadata.
+- VIIRS only: keep `type` 0 (presumed vegetation fire) and drop the other
+  values (active volcano, static land source such as gas flares, offshore).
+  Check the exact codes in the FIRMS attribute documentation. The MODIS file
+  has no `type` column, so this filter is asymmetric; list it as a limitation.
 - Remove exact duplicates (same satellite, time, latitude, longitude).
-- Keep day/night flag and fire radiative power (FRP) in the cleaned table for
-  later use. The prototype does not depend on them.
+- Carry `satellite`, `daynight` and `frp` into the cleaned table. Leave
+  `brightness`, `scan`, `track`, `bright_t31`, `version` and `instrument` out
+  of anything the web app loads.
+- Before filtering, print the distinct `satellite`, `confidence` and `type`
+  values and the date range of each file. Do not assume them.
 
 ### 4.2 Common grid
 
@@ -124,6 +140,16 @@ MODIS_hotspots  ~  k_season * VIIRS_fire_days
   per calendar month if the data supports it).
 - Estimate by regression through the origin, or a simple ratio of sums.
   Compare both and keep the one with lower held-out error.
+
+**Single-satellite rule.** Calibrate and build the harmonized series from one
+VIIRS satellite (Suomi NPP). If the download also contains NOAA-20 or NOAA-21,
+which launched later, do not pool them in: extra overpasses per day raise
+fire-days from their start dates for sampling reasons alone, so the training
+years (2012-2018) and the test years (2019 onward) would no longer be
+comparable. They can stay in the raw-detection files, but not in the
+calibrated series. For MODIS, state that Terra and Aqua are pooled and check
+that each contributes steadily over the years, since both satellites' overpass
+times have drifted in recent years (verify in the MODIS documentation).
 
 ### 4.5 The harmonized series
 
@@ -242,11 +268,14 @@ user requests a raw export:
 | daynight | string | D or N |
 | cell_id | string | containing 0.25 degree cell |
 
-Files are much smaller than the full record because they contain only
-quality-filtered detections for Tanzania. The browser fetches the years inside
-the selected date range, clips to the AOI, and applies the row cap in section
-6.3. If a year's file is still too large, coarsen the export or split it by
-month.
+The whole raw FIRMS download is about 0.7 GB as CSV. These files keep only
+filtered rows and a handful of columns, so they should be a small fraction of
+that, but the real size is unknown until the first export. Record the size of
+the largest year. If its gzipped file is above about 10 MB, split it by month.
+Compaction rules: round latitude and longitude to 4 decimals and FRP to 1
+decimal, store column-wise arrays instead of one object per row, and leave out
+the columns listed in section 4.1. The browser fetches the years inside the
+selected date range, clips to the AOI, and applies the row cap in section 6.3.
 
 ## 6. Web application
 
@@ -284,7 +313,7 @@ harmonized`. This is the harmonized cell-month table for the selection, not
 raw hotspot rows. It is named `firewatch_aggregate_<start>_<end>.csv` and
 labelled accordingly.
 
-**Raw-detection CSV (capped).** Quality-filtered hotspot rows from section
+**Raw-detection CSV (capped, built after the aggregate CSV works).** Quality-filtered hotspot rows from section
 5.3 for the selected years and AOI, with the FIRMS attributes. Because the app
 is static, the export is capped at 50,000 rows. Above the cap the app explains
 the limit, states how many rows matched, and offers the aggregate CSV instead.
@@ -333,6 +362,10 @@ layout are still to be designed.
   (Aqua and Suomi NPP) is a possible refinement.
 - Calibration is statistical, fitted per season; individual months can deviate.
 - Results depend on the filter thresholds, which are configurable and recorded.
+- The VIIRS `type` filter removes gas flares and similar static sources, but
+  the MODIS file cannot be filtered that way.
+- The calibrated series uses one VIIRS satellite on purpose. Adding later
+  satellites would improve sampling but break comparability with earlier years.
 
 ## 9. Path to production
 
