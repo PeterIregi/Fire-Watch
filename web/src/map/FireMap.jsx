@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-draw'
 
-import eastAfrica from './data/east-africa.geojson'
+import eastAfrica from './data/east-africa.geojson?raw'
 import { useFireWatch } from '../store/useFireWatch.js'
 
 const EAST_AFRICA_VIEW = [
@@ -70,7 +70,7 @@ function FireMap() {
 
     L.control.zoom({ position: 'topright' }).addTo(map)
 
-    L.geoJSON(eastAfrica, {
+    L.geoJSON(JSON.parse(eastAfrica), {
       style: getCountryStyle,
       onEachFeature(feature, layer) {
         const code = feature.properties?.['ISO3166-1-Alpha-3']
