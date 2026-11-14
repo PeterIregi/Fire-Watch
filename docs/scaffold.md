@@ -14,7 +14,6 @@ commit empty stubs. Empty directories that must survive Git are tracked with
 Fire-Watch/
 ├── README.md
 ├── .gitignore                  data/, .venv/, node_modules/, .env
-├── .env.example
 ├── docs/                       existing docs
 │   ├── scaffold.md             this file
 │   └── figures/                validation scatter, exported images (B)
@@ -26,7 +25,10 @@ Fire-Watch/
 │   └── interim/                cleaned and gridded Parquet files
 │
 ├── pipeline/                   Python (A and B)
-│   ├── requirements.txt        pinned Python dependencies
+│   ├── pyproject.toml          uv project and dependency groups
+│   ├── uv.lock                 locked Python dependency graph
+│   ├── .python-version         Python 3.12
+│   ├── requirements.txt        pinned export for non-uv installs
 │   ├── config.py               bbox, grid size, thresholds, years (to create)
 │   ├── ingest.py               A (to create)
 │   ├── clean.py                A (to create)
@@ -35,7 +37,8 @@ Fire-Watch/
 │   ├── harmonize.py            B (to create) -> cell_month.parquet
 │   ├── validate.py             B (to create) -> metrics, scatter data
 │   ├── calibration.json        B (to create)
-│   ├── export.py               A (to create) -> web/public/data/
+│   ├── export.py               A -> web/public/data/firewatch.json.gz
+│   ├── detections.py           A -> web/public/data/detections/YYYY.json.gz
 │   └── tests/                  small sanity checks per step
 │
 ├── web/                        React + Vite (C and D)
@@ -73,10 +76,9 @@ site needs them at deploy time.
 Python dependencies and the local environment:
 
 ```bash
-uv venv pipeline/.venv --python 3.12
-uv pip install --python pipeline/.venv/bin/python \
-  pandas numpy scipy pyarrow requests python-dotenv matplotlib
-uv pip freeze --python pipeline/.venv/bin/python > pipeline/requirements.txt
+cd pipeline
+uv sync --all-groups
+uv export --format requirements-txt --no-hashes --all-groups --no-emit-project -o requirements.txt
 ```
 
 React app and web dependencies:
