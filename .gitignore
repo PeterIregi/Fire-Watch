@@ -41,3 +41,6 @@ Thumbs.db
 # Local worktrees
 .worktrees/
 worktrees/
+
+# Local working plan
+/favor-plan.md
