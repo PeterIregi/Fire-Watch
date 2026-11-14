@@ -12,6 +12,7 @@ function App() {
   selection,
   selectedCells,
   reload,
+  resetAOI
 } = useFireWatch()
 
 const months = dataset?.meta.months ?? []
@@ -116,9 +117,20 @@ function handleEndChange(end) {
     <h2>Fire activity map</h2>
   </div>
 
-  <span className="source-label">
-    {selection.source.toUpperCase()}
-  </span>
+  <div className="workspace-actions">
+    <span className="source-label">
+      {selection.source.toUpperCase()}
+    </span>
+
+    <button
+      className="reset-area-button"
+      type="button"
+      onClick={resetAOI}
+      disabled={!selection.aoi}
+    >
+      RESET AREA
+    </button>
+  </div>
 </div>
 
 <div className="map-controls">
