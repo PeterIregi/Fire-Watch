@@ -4,7 +4,7 @@ from datetime import date
 
 import polars as pl
 
-from export import build_payload
+from export import build_payload, write_payload
 
 
 def test_build_payload_includes_harmonization_metadata() -> None:
@@ -74,3 +74,14 @@ def test_build_payload_keeps_placeholder_without_harmonized() -> None:
     assert meta["calibration"]["status"] == "placeholder"
     assert meta["validation"]["status"] == "placeholder"
     assert meta["validation"]["scatter"] == []
+
+
+def test_write_payload_is_path_independent(tmp_path) -> None:
+    payload = {"meta": {"version": 1}, "cells": [], "data": {}}
+    first = tmp_path / "first.json.gz"
+    second = tmp_path / "second.json.gz"
+
+    write_payload(payload, first)
+    write_payload(payload, second)
+
+    assert first.read_bytes() == second.read_bytes()

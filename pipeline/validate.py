@@ -73,6 +73,7 @@ def compute_metrics(predicted: list[float], observed: list[float], years: list[i
                 yearly_errors[y] = abs(pred_sum - obs_sum) / abs(obs_sum)
             else:
                 yearly_errors[y] = 0.0
+        yearly_errors = dict(sorted(yearly_errors.items()))
         overall = sum(yearly_errors.values()) / len(yearly_errors) if yearly_errors else 0.0
         return {
             "pearson": pearson,

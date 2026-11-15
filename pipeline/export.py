@@ -175,7 +175,9 @@ def write_payload(payload: dict, out: Path) -> int:
     encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("wb") as raw:
-        with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as handle:
+        with gzip.GzipFile(
+            filename="", fileobj=raw, mode="wb", mtime=0
+        ) as handle:
             handle.write(encoded)
     return out.stat().st_size
 

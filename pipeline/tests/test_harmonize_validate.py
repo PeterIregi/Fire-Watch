@@ -26,6 +26,7 @@ def test_fit_seasonal_k_with_date_month() -> None:
     # dry k should be ~100/50 = 2.0, wet k should be ~200/80 = 2.5
     assert abs(k_by_season["dry"] - 2.0) < 0.1, f"dry k should be ~2.0, got {k_by_season['dry']}"
     assert abs(k_by_season["wet"] - 2.5) < 0.1, f"wet k should be ~2.5, got {k_by_season['wet']}"
+    assert list(k_by_season) == ["dry", "wet"]
 
 
 def test_fit_seasonal_k_missing_season_raises() -> None:
@@ -81,8 +82,7 @@ def test_compute_metrics_with_years() -> None:
     m = compute_metrics(predicted, observed, years=years)
     assert "annual_total_relative_error" in m
     assert "annual_total_relative_error_by_year" in m
-    assert 2019 in m["annual_total_relative_error_by_year"]
-    assert 2020 in m["annual_total_relative_error_by_year"]
+    assert list(m["annual_total_relative_error_by_year"]) == [2019, 2020]
     assert m["spearman"] is not None
     assert -1.0 <= m["spearman"] <= 1.0
 

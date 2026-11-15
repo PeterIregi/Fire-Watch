@@ -42,7 +42,7 @@ def fit_seasonal_k(frame: pl.DataFrame, train_year_start: int = 2012, train_year
 
     return {
         row["season"]: row["modis"] / row["virs"]
-        for row in totals.iter_rows(named=True)
+        for row in totals.sort("season").iter_rows(named=True)
     }
 
 
