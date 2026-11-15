@@ -15,10 +15,10 @@ from validate import compute_metrics, scatter_points
 def test_fit_seasonal_k_with_date_month() -> None:
     """fit_seasonal_k should work when month is a Date, not YYYYMM int."""
     frame = pl.DataFrame({
-        "cell_id": ["0.0_0.0", "0.0_0.0", "0.1_0.1", "0.1_0.1"],
-        "month": [date(2019, 6, 1), date(2019, 11, 1), date(2019, 6, 1), date(2019, 11, 1)],
-        "modis_hotspots": [100, 200, 150, 250],
-        "viirs_fire_days": [50, 80, 60, 90],
+        "cell_id": ["0.0_0.0", "0.0_0.0"],
+        "month": [date(2019, 6, 1), date(2019, 11, 1)],
+        "modis_hotspots": [100, 200],
+        "viirs_fire_days": [50, 80],
     })
     k_by_season = fit_seasonal_k(frame, train_year_start=2019, train_year_end=2020)
     assert "dry" in k_by_season, "expected 'dry' season in k_by_season"
@@ -83,6 +83,8 @@ def test_compute_metrics_with_years() -> None:
     assert "annual_total_relative_error_by_year" in m
     assert 2019 in m["annual_total_relative_error_by_year"]
     assert 2020 in m["annual_total_relative_error_by_year"]
+    assert m["spearman"] is not None
+    assert -1.0 <= m["spearman"] <= 1.0
 
 
 def test_compute_metrics_without_years_fallback() -> None:
@@ -93,6 +95,8 @@ def test_compute_metrics_without_years_fallback() -> None:
     assert "annual_total_relative_error" in m
     assert "annual_total_relative_error_by_year" in m
     assert m["annual_total_relative_error_by_year"] == {}
+    assert m["spearman"] is not None
+    assert -1.0 <= m["spearman"] <= 1.0
 
 
 def test_scatter_points() -> None:
