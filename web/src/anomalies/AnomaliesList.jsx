@@ -64,7 +64,7 @@ export function AnomaliesList({
             Unusual Periods (Anomalies)
           </h2>
           <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-            Flagged via robust z-score ($z = 0.6745 \times (x - \text{median}) / \text{MAD}$). Click any item to highlight on calendar.
+            Flagged via robust z-score (z = 0.6745 × (x − median) / MAD). Click any item to highlight on calendar.
           </p>
         </div>
 
