@@ -248,18 +248,29 @@ p {
    DASHBOARD LAYOUT
    ========================================= */
 
-.dashboard {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.8fr);
-  align-items: start;
-  gap: 20px;
-}
-
 .main-column {
   display: flex;
   flex-direction: column;
   gap: 20px;
   min-width: 0;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  align-items: stretch;
+  gap: 20px;
+}
+
+.insight-grid .map-panel {
+  min-width: 0;
+  height: 100%;
+}
+
+.insight-grid .map-canvas {
+  flex: 1;
+  height: auto;
+  min-height: 420px;
 }
 
 .panel {
@@ -1216,16 +1227,12 @@ p {
    ========================================= */
 
 @media (max-width: 1100px) {
-  .dashboard {
+  .insight-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .aoi-panel {
-    order: 2;
-  }
-
-  .main-column {
-    order: 1;
+  .insight-grid .map-canvas {
+    min-height: 420px;
   }
 }
 
