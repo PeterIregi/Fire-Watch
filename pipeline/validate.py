@@ -124,6 +124,9 @@ def main() -> None:
     train_metrics = compute_metrics(train_pred, train_obs)
     test_metrics = compute_metrics(test_pred, test_obs, years=test_years)
 
+    # Compute scatter data
+    scatter = scatter_points(test_pred, test_obs)
+
     # Write metrics output
     metrics = {
         "train": train_metrics,
