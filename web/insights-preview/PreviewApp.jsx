@@ -387,10 +387,8 @@ export function PreviewApp() {
             cellRows={SYNTHETIC_CELL_ROWS}
             startMonth={startMonth}
             endMonth={endMonth}
+            bbox={currentAoi.bbox}
             onExportPng={handleExportPng}
-            onExportRawCsv={() => {
-              console.log('Export Raw CSV clicked');
-            }}
           />
         </main>
       )}

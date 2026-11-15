@@ -453,11 +453,8 @@ export function App() {
           cellRows={cellRows}
           startMonth={startMonth}
           endMonth={endMonth}
+          bbox={bbox}
           onExportPng={handleExportPng}
-          onExportRawCsv={() => {
-            alert('Opening raw detections export modal (Capped at 50,000 rows)...');
-          }}
-          rawExportAvailable={true}
         />
 
         {/* Footer */}
