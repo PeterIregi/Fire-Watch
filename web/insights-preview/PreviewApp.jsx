@@ -9,7 +9,8 @@ import { CalendarHeatmap } from '../src/calendar/CalendarHeatmap.jsx';
 import { ComparisonChart } from '../src/charts/ComparisonChart.jsx';
 import { KpiCards } from '../src/kpis/KpiCards.jsx';
 import { AnomaliesList } from '../src/anomalies/AnomaliesList.jsx';
-import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES } from './fixtures.js';
+import { ExportPanel } from '../src/export/ExportPanel.jsx';
+import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES, SYNTHETIC_CELL_ROWS } from './fixtures.js';
 
 export function PreviewApp() {
   const [selectedAoiId, setSelectedAoiId] = useState(SAMPLE_AOIS[0].id);
@@ -361,22 +362,18 @@ export function PreviewApp() {
             }}
           />
 
-          <div
-            id="preview-analytics-mount-slot"
-            style={{
-              padding: '1.5rem',
-              backgroundColor: '#1e293b',
-              borderRadius: '8px',
-              border: '1px dashed #475569',
-              textAlign: 'center',
-              color: '#94a3b8',
+          {/* Data Export Panel */}
+          <ExportPanel
+            cellRows={SYNTHETIC_CELL_ROWS}
+            startMonth={startMonth}
+            endMonth={endMonth}
+            onExportPng={() => {
+              console.log('Export PNG clicked');
             }}
-          >
-            <p style={{ fontWeight: 600, color: '#cbd5e1' }}>Analytics Components Mount Point</p>
-            <p style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-              Comparison chart, KPIs, anomalies, and downloads mount here in subsequent issues.
-            </p>
-          </div>
+            onExportRawCsv={() => {
+              console.log('Export Raw CSV clicked');
+            }}
+          />
         </main>
       )}
     </div>
