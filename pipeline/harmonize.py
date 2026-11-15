@@ -1,5 +1,7 @@
 """Calibrate VIIRS fire-days to MODIS-equivalent hotspots."""
 
+from __future__ import annotations
+
 import argparse
 
 import polars as pl
@@ -7,15 +9,14 @@ import polars as pl
 import config
 
 
-def season_of(month: int) -> str:
-    """Map calendar month to dry/wet season."""
-    return "dry" if 5 <= month <= 10 else "wet"
-
-
 def fit_seasonal_k(frame: pl.DataFrame) -> dict[str, float]:
     """Fit MODIS-equivalent k per season from 1-degree x 1-degree x month blocks."""
+    # Extract month number from Date column (Polars 2.1 compatible)
+    frame = frame.with_columns(pl.col("month").dt.month().alias("month_num"))
     totals = (
-        frame.with_columns(pl.col("month").apply(season_of).alias("season"))
+        frame.with_columns(
+            pl.when(pl.col("month_num").is_between(5, 10)).then(pl.lit("dry")).otherwise(pl.lit("wet")).alias("season")
+        )
         .group_by("season")
         .agg(
             pl.col("modis_hotspots").sum().alias("modis"),
@@ -31,13 +32,18 @@ def fit_seasonal_k(frame: pl.DataFrame) -> dict[str, float]:
 
 def apply_harmonization(frame: pl.DataFrame, k_by_season: dict[str, float]) -> pl.DataFrame:
     """Write harmonized = k_season * VIIRS fire-days onto the cell-month frame."""
-    k_by_month = pl.col("month").apply(season_of).map_elements(
-        lambda season: k_by_season.get(season, 0.0), return_dtype=pl.Float64
-    )
-    harmonized = pl.when(pl.col("month") < 201201).then(
+    # Extract month number from Date column (Polars 2.1 compatible)
+    frame = frame.with_columns(pl.col("month").dt.month().alias("month_num"))
+    # Map month number to season via expression (no apply needed)
+    k_by_month = pl.when(pl.col("month_num").is_between(5, 10)).then(
+        pl.lit(k_by_season.get("dry", 0.0))
+    ).otherwise(
+        pl.lit(k_by_season.get("wet", 0.0))
+    ).alias("k_by_month")
+    harmonized = pl.when(pl.col("month").dt.year() < 2012).then(
         pl.col("modis_hotspots").cast(pl.Float64)
     ).otherwise(pl.col("viirs_fire_days").cast(pl.Float64) * k_by_month).alias("harmonized")
-    return frame.with_columns(harmonized)
+    return frame.with_columns(k_by_month, harmonized)
 
 
 def parse_args() -> argparse.Namespace:

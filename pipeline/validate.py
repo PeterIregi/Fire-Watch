@@ -1,6 +1,7 @@
 """Compute held-out harmonization validation metrics and scatter data."""
 
 import argparse
+import json
 
 import polars as pl
 
@@ -81,9 +82,10 @@ def main() -> None:
     if cell_month.is_empty():
         raise RuntimeError("cell-month table is empty, run harmonize.py first")
 
-    # Separate train / test periods
-    train = cell_month.filter(pl.col("month") <= 201812)
-    test = cell_month.filter(pl.col("month") >= 201901)
+    # Separate train / test periods by year (Date column, not YYYYMM int)
+    # Train: 2012–2018 overlap period; Test: 2019–2025 (2026 excluded per data policy)
+    train = cell_month.filter(pl.col("month").dt.year().is_between(2012, 2018))
+    test = cell_month.filter(pl.col("month").dt.year().is_between(2019, 2025))
 
     # Build predicted (harmonized) and observed (MODIS) vectors
     train_pred = train["harmonized"].to_list()
