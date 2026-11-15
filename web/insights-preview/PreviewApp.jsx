@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   SOURCES,
   SOURCE_METADATA,
@@ -10,9 +10,11 @@ import { ComparisonChart } from '../src/charts/ComparisonChart.jsx';
 import { KpiCards } from '../src/kpis/KpiCards.jsx';
 import { AnomaliesList } from '../src/anomalies/AnomaliesList.jsx';
 import { ExportPanel } from '../src/export/ExportPanel.jsx';
+import { createPresentationCalendarPng, downloadDataUrl } from '../src/export/calendarPng.js';
 import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES, SYNTHETIC_CELL_ROWS } from './fixtures.js';
 
 export function PreviewApp() {
+  const calendarRef = useRef(null);
   const [selectedAoiId, setSelectedAoiId] = useState(SAMPLE_AOIS[0].id);
   const [startMonth, setStartMonth] = useState('2018-01');
   const [endMonth, setEndMonth] = useState('2024-12');
@@ -20,6 +22,23 @@ export function PreviewApp() {
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateEmpty, setSimulateEmpty] = useState(false);
   const [highlightedMonth, setHighlightedMonth] = useState(null);
+
+  const handleExportPng = async () => {
+    if (!calendarRef.current) return;
+    const rawDataUrl = calendarRef.current.getDataUrl();
+    if (!rawDataUrl) {
+      alert('Calendar has no active data to export.');
+      return;
+    }
+    const currentMeta = SOURCE_METADATA[source];
+    const compositedUrl = await createPresentationCalendarPng(rawDataUrl, {
+      aoiName: currentAoi.name,
+      dateRange: `${startMonth} to ${endMonth}`,
+      sourceLabel: currentMeta.label,
+      unit: currentMeta.unit,
+    });
+    downloadDataUrl(compositedUrl, 'firewatch_calendar.png');
+  };
 
   // Active AOI metadata
   const currentAoi = useMemo(() => {
@@ -338,6 +357,7 @@ export function PreviewApp() {
 
           {/* Calendar Heatmap */}
           <CalendarHeatmap
+            ref={calendarRef}
             series={displayedSeries}
             source={source}
             onSourceChange={setSource}
@@ -367,9 +387,7 @@ export function PreviewApp() {
             cellRows={SYNTHETIC_CELL_ROWS}
             startMonth={startMonth}
             endMonth={endMonth}
-            onExportPng={() => {
-              console.log('Export PNG clicked');
-            }}
+            onExportPng={handleExportPng}
             onExportRawCsv={() => {
               console.log('Export Raw CSV clicked');
             }}

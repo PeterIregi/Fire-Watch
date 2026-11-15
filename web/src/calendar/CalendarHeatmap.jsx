@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import * as echarts from 'echarts';
 import {
   SOURCES,
@@ -29,17 +29,36 @@ const VIRIDIS_COLORS = [
  * - onCellClick: (monthStr, value) => void
  * - onChartReady: (echartsInstance) => void
  */
-export function CalendarHeatmap({
-  series = [],
-  source = SOURCES.HARMONIZED,
-  onSourceChange,
-  highlightedMonth = null,
-  onCellClick,
-  onChartReady,
-}) {
+export const CalendarHeatmap = forwardRef(function CalendarHeatmap(
+  {
+    series = [],
+    source = SOURCES.HARMONIZED,
+    onSourceChange,
+    highlightedMonth = null,
+    onCellClick,
+    onChartReady,
+  },
+  ref
+) {
   const chartContainerRef = useRef(null);
   const chartInstanceRef = useRef(null);
   const [showTable, setShowTable] = useState(false);
+
+  // Expose imperative methods for export
+  useImperativeHandle(ref, () => ({
+    getChartInstance: () => chartInstanceRef.current,
+    hasData: () => hasData,
+    getDataUrl: (options = {}) => {
+      if (!chartInstanceRef.current) return null;
+      return chartInstanceRef.current.getDataURL({
+        type: 'png',
+        pixelRatio: 2, // High-res presentation quality
+        backgroundColor: '#1e293b',
+        excludeComponents: ['toolbox'],
+        ...options,
+      });
+    },
+  }));
 
   const activeMeta = SOURCE_METADATA[source] || SOURCE_METADATA[SOURCES.HARMONIZED];
 
@@ -433,5 +452,5 @@ export function CalendarHeatmap({
       )}
     </div>
   );
-}
+});
 export default CalendarHeatmap;
