@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 
 import polars as pl
 
@@ -47,18 +48,17 @@ def fit_seasonal_k(frame: pl.DataFrame, train_year_start: int = 2012, train_year
 
 def apply_harmonization(frame: pl.DataFrame, k_by_season: dict[str, float]) -> pl.DataFrame:
     """Write harmonized = k_season * VIIRS fire-days onto the cell-month frame."""
-    # Extract month number from Date column (Polars 2.1 compatible)
-    frame = frame.with_columns(pl.col("month").dt.month().alias("month_num"))
-    # Map month number to season via expression (no apply needed)
-    k_by_month = pl.when(pl.col("month_num").is_between(5, 10)).then(
-        pl.lit(k_by_season.get("dry", 0.0))
-    ).otherwise(
-        pl.lit(k_by_season.get("wet", 0.0))
-    ).alias("k_by_month")
+    # Compute harmonized directly from original columns (no temp columns)
     harmonized = pl.when(pl.col("month").dt.year() < 2012).then(
         pl.col("modis_hotspots").cast(pl.Float64)
-    ).otherwise(pl.col("viirs_fire_days").cast(pl.Float64) * k_by_month).alias("harmonized")
-    return frame.with_columns(k_by_month, harmonized)
+    ).otherwise(
+        pl.col("viirs_fire_days").cast(pl.Float64)
+        * pl.when(pl.col("month").dt.month().is_between(5, 10)).then(
+            pl.lit(k_by_season.get("dry", 0.0))
+        ).otherwise(pl.lit(k_by_season.get("wet", 0.0)))
+    ).alias("harmonized")
+    # Contract: cell_month_raw columns + harmonized only
+    return frame.with_columns(harmonized)
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,7 +75,8 @@ def main() -> None:
     if cell_month.is_empty():
         raise RuntimeError("cell-month raw table is empty")
 
-    k_by_season = fit_seasonal_k(cell_month, train_year_start=2012, train_year_end=2018)
+    train_year_start, train_year_end = map(int, args.train.split("-"))
+    k_by_season = fit_seasonal_k(cell_month, train_year_start=train_year_start, train_year_end=train_year_end)
     cell_month = apply_harmonization(cell_month, k_by_season)
     cell_month.write_parquet(config.CELL_MONTH, compression="zstd")
 
@@ -96,5 +97,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    import json
     main()

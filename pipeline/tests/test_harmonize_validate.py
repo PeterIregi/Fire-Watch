@@ -20,7 +20,7 @@ def test_fit_seasonal_k_with_date_month() -> None:
         "modis_hotspots": [100, 200, 150, 250],
         "viirs_fire_days": [50, 80, 60, 90],
     })
-    k_by_season = fit_seasonal_k(frame)
+    k_by_season = fit_seasonal_k(frame, train_year_start=2019, train_year_end=2020)
     assert "dry" in k_by_season, "expected 'dry' season in k_by_season"
     assert "wet" in k_by_season, "expected 'wet' season in k_by_season"
     # dry k should be ~100/50 = 2.0, wet k should be ~200/80 = 2.5
@@ -37,10 +37,10 @@ def test_fit_seasonal_k_missing_season_raises() -> None:
         "viirs_fire_days": [1],
     })
     try:
-        fit_seasonal_k(frame)
+        fit_seasonal_k(frame, train_year_start=2019, train_year_end=2020)
         assert False, "Expected RuntimeError for missing season"
     except RuntimeError as e:
-        assert "missing season" in str(e).lower()
+        assert "no data for season(s)" in str(e).lower()
 
 
 def test_apply_harmonization_with_date_month() -> None:
