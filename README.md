@@ -5,9 +5,10 @@
 Built by **Team Tazama** for the NASA Space Apps Challenge 2026, challenge
 *Harmonization of MODIS and VIIRS Hot Spots*.
 
-> Status: prototype in development. This repository currently holds the
-> project documentation. The pipeline and web app are being built during the
-> hackathon (November 14-15, 2026).
+> Status: scaffolded for the hackathon (November 14-15, 2026). The repository
+> contains the project documentation, a Python/uv pipeline baseline, and a
+> React/Vite web baseline. The pipeline steps and app modules are being filled
+> in by their owners.
 
 ---
 
@@ -64,20 +65,20 @@ managers and firefighters.
 - MODIS and VIIRS observe at different times of day, so agreement is
   statistical, never perfect. Uncertainty is shown in the app.
 
-## Repository layout (planned)
+## Repository layout
 
 ```
-firewatch/
+Fire-Watch/
   README.md
-  docs/
-    system-design.md       Architecture, data model, harmonization method
-    setup.md               Environment, data access, running the project
-    development-plan.md    Scope, phases, checklists, risks
-    task-splitter.md       Workstreams and ownership for the four-person team
+  docs/                    design, setup, plan, task split, scaffold
   pipeline/                Python: ingest, clean, grid, harmonize, export
-  web/                     React + Leaflet + ECharts static app
-  data/                    Cached downloads and exported data (git-ignored)
+  web/                     React + Vite + Leaflet + ECharts static app
+  data/                    Cached downloads and intermediates (git-ignored)
+  .github/workflows/       GitHub Pages deployment
 ```
+
+The full scaffold, including the files each owner still needs to create, is in
+[docs/scaffold.md](docs/scaffold.md).
 
 ## Documentation
 
@@ -85,6 +86,7 @@ firewatch/
 - [Setup](docs/setup.md)
 - [Development plan](docs/development-plan.md)
 - [Task splitter](docs/task-splitter.md)
+- [Scaffold](docs/scaffold.md)
 
 ## Data and attribution
 

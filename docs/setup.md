@@ -6,10 +6,11 @@ and may change names. Update this file as the real commands settle.
 
 ## 1. Prerequisites
 
-- Python 3.10 or newer
-- Node.js 18 or newer and npm
+- Python 3.12 (3.10 or newer works; the scaffold environment uses 3.12)
+- [uv](https://docs.astral.sh/uv/) for the Python environment
+- Node.js 22 LTS or newer and npm (Vite 8 requires 20.19+ or 22.12+)
 - Git
-- A free NASA Earthdata / FIRMS account and a FIRMS **MAP_KEY**
+- Optional: a FIRMS **MAP_KEY** only if you need to refresh or extend the download
 - Disk space: the raw download is about 0.7 GB; a few GB in total covers
   intermediate files
 
@@ -18,35 +19,32 @@ and may change names. Update this file as the real commands settle.
 ```bash
 git clone <repo-url> firewatch
 cd firewatch
-mkdir -p pipeline web data/raw data/interim data/export
+mkdir -p data/raw/modis data/raw/viirs data/interim
 ```
 
-Add a `.gitignore` containing at least:
-
-```
-data/
-.venv/
-node_modules/
-.env
-```
+The `pipeline/`, `web/`, and `.github/` scaffolds are already in the
+repository; see [scaffold.md](scaffold.md) for the full layout. The root
+`.gitignore` already excludes `data/`, `.venv/`, `node_modules/`, `dist/`, and
+`.env`.
 
 ## 3. FIRMS access
 
 **The team has already downloaded the data** (about 0.7 GB, shared through the
 Drive folder linked in the README). Put the CSVs under `data/raw/modis/` and
-`data/raw/viirs/`. The ingest step reads every `*.csv` in those folders, so file
-names do not matter. A MAP_KEY is only needed to refresh or extend the data;
-the rest of this section applies only if you need to download again.
+`data/raw/viirs/`. The ingest step reads `modis_*.csv` from the MODIS folder
+and `viirs_*.csv` from the VIIRS folder. A MAP_KEY is only needed to refresh or
+extend the data; the rest of this section applies only if you need to download
+again.
 
 1. Request a MAP_KEY on the FIRMS website (look for the Area API / MAP_KEY
    registration page).
 2. Store it as an environment variable, never in the repository:
 
 ```bash
-cp .env.example .env     # then edit .env
-# .env
-FIRMS_MAP_KEY=your_key_here
+export FIRMS_MAP_KEY=your_key_here
 ```
+
+The current archive-only build does not require a MAP_KEY or an `.env` file.
 
 3. Test a small request before any bulk download.
 
@@ -71,21 +69,27 @@ Products to pull (confirm names and availability on FIRMS):
 
 ```bash
 cd pipeline
-python -m venv .venv
+uv sync --all-groups
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install pandas numpy scipy pyarrow requests python-dotenv matplotlib
-pip freeze > requirements.txt
+```
+
+`pyproject.toml` and `uv.lock` are the source of truth. After adding a
+dependency, regenerate the pinned export:
+
+```bash
+uv export --format requirements-txt --no-hashes --all-groups --no-emit-project -o requirements.txt
 ```
 
 Planned entry points (run in order; each step reads the previous step's output):
 
 ```bash
 python ingest.py     --raw-dir ../data/raw --bbox 29.3 -11.8 40.5 -0.9
-python clean.py      --modis-min-conf 30 --viirs-drop low
+python clean.py      --modis-min-conf 30 --viirs-drop l low
 python grid.py       --grid 0.25
 python aggregate.py
 python harmonize.py  --train 2012-2018 --test 2019-2025
 python export.py     --out ../web/public/data/firewatch.json.gz
+python detections.py --out-dir ../web/public/data/detections
 ```
 
 Expected outputs:
@@ -93,8 +97,9 @@ Expected outputs:
 | Step | Output |
 |---|---|
 | ingest | `data/raw/...` yearly CSVs |
-| clean | `data/interim/clean_*.parquet` |
-| grid / aggregate | `data/interim/cell_month.parquet` |
+| clean | `data/interim/clean_detections.parquet` |
+| grid | `data/interim/gridded_detections.parquet` |
+| aggregate | `data/interim/cell_month_raw.parquet` |
 | harmonize | calibration coefficients, validation metrics, `validation_scatter.png` |
 | export | `web/public/data/firewatch.json.gz` and `web/public/data/detections/YYYY.json.gz` |
 
@@ -114,11 +119,12 @@ Develop against **one year first**, then run the full range.
 
 ```bash
 cd web
-npm create vite@latest . -- --template react
-npm install leaflet leaflet-draw echarts
-npm install            # restores everything
+npm ci                 # clean install from package-lock.json
 npm run dev            # http://localhost:5173
 ```
+
+The Vite app and `leaflet`, `leaflet-draw`, and `echarts` are already
+scaffolded. Replace the demo `App.jsx` with the FireWatch shell.
 
 While the pipeline is unfinished, develop with a small dummy file at
 `web/public/data/firewatch.json.gz` that follows the schema in
@@ -134,8 +140,10 @@ npm run build          # outputs web/dist
 
 Owned by the web core domain. Others do not change hosting settings.
 
-- **GitHub Pages:** publish `web/dist`. Set the Vite `base` option to the
-  repository path.
+- **GitHub Pages:** `.github/workflows/deploy.yml` builds and publishes
+  `web/dist` on every push to `main`. It sets `VITE_BASE` to the repository
+  path, which `vite.config.js` reads. Enable Pages with GitHub Actions as the
+  source once.
 - **Vercel:** import the repository, set the root directory to `web`, build
   command `npm run build`, output `dist`.
 

@@ -1,6 +1,8 @@
 import { escapeCsvField, downloadCsvFile } from './aggregateCsv.js';
 import { isCellInBbox } from '../store/dataStore.js';
 
+const BASE_URL = import.meta.env?.BASE_URL ?? '/';
+
 export const MAX_RAW_EXPORT_ROWS = 50000;
 
 export const RAW_CSV_COLUMNS = [
@@ -114,15 +116,57 @@ export function generateRawHotspotsCsv(rows) {
  * @param {Function} [fetchFn=fetch]
  * @returns {Promise<Array<Object>>}
  */
+function normalizeDetections(payload) {
+  if (Array.isArray(payload)) return payload;
+
+  if (
+    payload &&
+    Array.isArray(payload.columns) &&
+    payload.data &&
+    typeof payload.data === 'object'
+  ) {
+    const { columns, data } = payload;
+    const count =
+      payload.count ??
+      (Array.isArray(data[columns[0]]) ? data[columns[0]].length : 0);
+
+    return Array.from({ length: count }, (_, index) =>
+      Object.fromEntries(columns.map((column) => [column, data[column]?.[index]])),
+    );
+  }
+
+  return [];
+}
+
+async function decodeJsonResponse(response) {
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const isGzip = bytes[0] === 0x1f && bytes[1] === 0x8b;
+
+  if (!isGzip) {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('This browser does not support gzip decompression');
+  }
+
+  const stream = new Blob([buffer])
+    .stream()
+    .pipeThrough(new DecompressionStream('gzip'));
+
+  return JSON.parse(await new Response(stream).text());
+}
+
 export async function fetchYearlyDetections(year, fetchFn = (typeof window !== 'undefined' ? window.fetch : null)) {
   if (!fetchFn) return [];
   try {
-    const response = await fetchFn(`/data/detections/${year}.json`);
+    const response = await fetchFn(`${BASE_URL}data/detections/${year}.json.gz`);
     if (!response.ok) {
       if (response.status === 404) return []; // Missing year is normal (e.g. before sensor launch)
       throw new Error(`Failed to load raw detections for year ${year}: ${response.status}`);
     }
-    return await response.json();
+    return normalizeDetections(await decodeJsonResponse(response));
   } catch (err) {
     console.warn(`Could not load raw detections for year ${year}:`, err);
     return [];
