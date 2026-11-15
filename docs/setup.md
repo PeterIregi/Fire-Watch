@@ -80,28 +80,40 @@ dependency, regenerate the pinned export:
 uv export --format requirements-txt --no-hashes --all-groups --no-emit-project -o requirements.txt
 ```
 
-Planned entry points (run in order; each step reads the previous step's output):
+Run the complete pipeline from the repository root with one command:
 
 ```bash
-python ingest.py     --raw-dir ../data/raw --bbox 29.3 -11.8 40.5 -0.9
-python clean.py      --modis-min-conf 30 --viirs-drop l low
-python grid.py       --grid 0.25
-python aggregate.py
-python harmonize.py  --train 2012-2018 --test 2019-2025
-python export.py     --out ../web/public/data/firewatch.json.gz
-python detections.py --out-dir ../web/public/data/detections
+uv run --project pipeline python pipeline/run.py
 ```
+
+This runs, in order:
+
+```text
+ingest -> clean -> grid -> aggregate -> harmonize -> validate -> export -> detections
+```
+
+The raw FIRMS archives must already be under `data/raw/` (see section 3).
+Individual stages can still be run separately from `pipeline/`; use
+`python <stage>.py --help` for their options.
 
 Expected outputs:
 
 | Step | Output |
 |---|---|
-| ingest | `data/raw/...` yearly CSVs |
+| ingest | `data/interim/ingest_manifest.json` |
 | clean | `data/interim/clean_detections.parquet` |
 | grid | `data/interim/gridded_detections.parquet` |
 | aggregate | `data/interim/cell_month_raw.parquet` |
-| harmonize | calibration coefficients, validation metrics, `validation_scatter.png` |
-| export | `web/public/data/firewatch.json.gz` and `web/public/data/detections/YYYY.json.gz` |
+| harmonize | `data/interim/cell_month.parquet`, `calibration.json` |
+| validate | `data/interim/validation_metrics.json` |
+| export | `web/public/data/firewatch.json.gz` |
+| detections | `web/public/data/detections/YYYY.json.gz` |
+
+Tests:
+
+```bash
+uv run --project pipeline python -m pytest pipeline/tests -q
+```
 
 Sanity checks after each step:
 

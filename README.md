@@ -71,7 +71,7 @@ managers and firefighters.
 Fire-Watch/
   README.md
   docs/                    design, setup, plan, task split, scaffold
-  pipeline/                Python: ingest, clean, grid, harmonize, export
+  pipeline/                Python: ingest, clean, grid, aggregate, harmonize, validate, export, detections
   web/                     React + Vite + Leaflet + ECharts static app
   data/                    Cached downloads and intermediates (git-ignored)
   .github/workflows/       GitHub Pages deployment

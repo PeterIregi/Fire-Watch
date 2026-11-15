@@ -36,12 +36,70 @@ def month_range(start: date, end: date) -> list[date]:
     return months
 
 
-def build_payload(cell_month: pl.DataFrame, source_name: str) -> dict:
+def load_json(path: Path) -> dict:
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found; run the harmonization pipeline first")
+    return json.loads(path.read_text())
+
+
+def build_payload(
+    cell_month: pl.DataFrame,
+    source_name: str,
+    calibration: dict | None = None,
+    validation: dict | None = None,
+) -> dict:
     if cell_month.is_empty():
         raise RuntimeError("cell-month table is empty")
 
     has_harmonized = "harmonized" in cell_month.columns
     harmonized_status = "calibrated" if has_harmonized else "placeholder"
+
+    if has_harmonized and (calibration is None or validation is None):
+        raise RuntimeError(
+            "calibrated export requires calibration.json and validation_metrics.json"
+        )
+
+    if has_harmonized:
+        test_metrics = validation.get("test", {})
+        calibration_meta = {
+            "overlap": "2012-2026",
+            "train": calibration.get("train_range", "2012-2018"),
+            "test": calibration.get("test_range", "2019-2025"),
+            "k_by_season": calibration.get("k_by_season", {}),
+            "status": calibration.get("status", "fitted"),
+        }
+        validation_meta = {
+            "pearson": test_metrics.get("pearson", 0.0),
+            "spearman": test_metrics.get("spearman", 0.0),
+            "bias": test_metrics.get("bias", 0.0),
+            "mae": test_metrics.get("mae", 0.0),
+            "annual_total_relative_error": test_metrics.get(
+                "annual_total_relative_error", 0.0
+            ),
+            "annual_total_relative_error_by_year": test_metrics.get(
+                "annual_total_relative_error_by_year", {}
+            ),
+            "scatter": validation.get("scatter_points", []),
+            "status": "validated",
+        }
+    else:
+        calibration_meta = {
+            "overlap": "2012-2026",
+            "train": "2012-2018",
+            "test": "2019-2025",
+            "k_by_season": {"dry": 0.0, "wet": 0.0},
+            "status": "placeholder",
+        }
+        validation_meta = {
+            "pearson": 0.0,
+            "spearman": 0.0,
+            "bias": 0.0,
+            "mae": 0.0,
+            "annual_total_relative_error": 0.0,
+            "annual_total_relative_error_by_year": {},
+            "scatter": [],
+            "status": "placeholder",
+        }
     harmonized_expr = (
         pl.col("harmonized").cast(pl.Float64)
         if has_harmonized
@@ -100,22 +158,8 @@ def build_payload(cell_month: pl.DataFrame, source_name: str) -> dict:
             "viirs_drop": sorted(config.VIIRS_LOW_CONFIDENCE),
             "keep_fire_type": config.KEEP_FIRE_TYPE,
         },
-        "calibration": {
-            "overlap": "2012-2026",
-            "train": "2012-2018",
-            "test": "2019-2025",
-            "k_by_season": {"dry": 0.0, "wet": 0.0},
-            "status": "placeholder",
-        },
-        "validation": {
-            "pearson": 0.0,
-            "spearman": 0.0,
-            "bias": 0.0,
-            "mae": 0.0,
-            "annual_total_relative_error": 0.0,
-            "scatter": [],
-            "status": "placeholder",
-        },
+        "calibration": calibration_meta,
+        "validation": validation_meta,
         "harmonized_status": harmonized_status,
         "data_start": config.DATA_START.isoformat(),
         "data_end": config.DATA_END.isoformat(),
@@ -131,14 +175,16 @@ def write_payload(payload: dict, out: Path) -> int:
     encoded = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("wb") as raw:
-        with gzip.GzipFile(fileobj=raw, mode="wb", mtime=0) as handle:
+        with gzip.GzipFile(
+            filename="", fileobj=raw, mode="wb", mtime=0
+        ) as handle:
             handle.write(encoded)
     return out.stat().st_size
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export FireWatch web data.")
-    parser.add_argument("--input", type=Path, default=config.CELL_MONTH_RAW)
+    parser.add_argument("--input", type=Path, default=config.CELL_MONTH)
     parser.add_argument("--out", type=Path, default=config.FIREWATCH_JSON)
     return parser.parse_args()
 
@@ -149,10 +195,17 @@ def main() -> None:
     out = args.out.expanduser().resolve()
 
     if not source.exists():
-        raise FileNotFoundError(f"{source} not found; run aggregate.py first")
+        raise FileNotFoundError(f"{source} not found; run harmonize.py first")
 
     cell_month = pl.read_parquet(source)
-    payload = build_payload(cell_month, source.name)
+    if "harmonized" in cell_month.columns:
+        calibration = load_json(config.CALIBRATION_JSON)
+        validation = load_json(config.VALIDATION_METRICS_JSON)
+    else:
+        calibration = None
+        validation = None
+
+    payload = build_payload(cell_month, source.name, calibration, validation)
     size = write_payload(payload, out)
 
     print(f"Cells: {len(payload['cells']):,}")
