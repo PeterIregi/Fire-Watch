@@ -41,19 +41,19 @@ Domain D relies on clear input contracts from other domains:
 
 The implementation proceeds strictly across 11 milestone issues tracked in **Issue #1**:
 
-| Step | Issue | Milestone Title | Key Deliverable |
-|---|---|---|---|
-| **01** | #2 | Component inputs & synthetic data | Data contracts, data helpers, deterministic test fixtures |
-| **02** | #3 | Isolated React preview environment | Vite + React + ECharts preview harness (`web/insights-preview/`) |
-| **03** | #4 | Burning calendar & source toggle | ECharts calendar heatmap with viridis ramp and source control |
-| **04** | #5 | Sensor comparison line chart | Multi-sensor time-series chart showing MODIS, VIIRS, Harmonized |
-| **05** | #6 | Current-month & busiest-period KPIs | Headline metric cards with historical median comparison |
-| **06** | #7 | Anomaly detection & calendar sync | Robust z-score anomaly detector linked to calendar highlights |
-| **07** | #8 | Aggregate CSV export | Client-side RFC 4180 CSV builder (`firewatch_aggregate_*.csv`) |
-| **08** | #9 | Calendar PNG export | Presentation-ready PNG snapshot via ECharts `getDataURL` |
-| **09** | #10 | Shared selection integration & a11y | End-to-end integration with shared app and WCAG audit |
-| **10** | #11 | Capped raw detection CSV export | Safe on-demand raw export with 50,000 row cap protection |
-| **11** | #12 | Submission checklist & handoff | Final artifact verification, attribution, and delivery handoff |
+| Step | Issue | Milestone Title | Key Deliverable | Status |
+|---|---|---|---|---|
+| **01** | #2 | Component inputs & synthetic data | Data contracts, data helpers, deterministic test fixtures | ✓ Completed |
+| **02** | #3 | Isolated React preview environment | Vite + React + ECharts preview harness (`web/insights-preview/`) | ✓ Completed |
+| **03** | #4 | Burning calendar & source toggle | ECharts calendar heatmap with viridis ramp and source control | ✓ Completed |
+| **04** | #5 | Sensor comparison line chart | Multi-sensor time-series chart showing MODIS, VIIRS, Harmonized | ✓ Completed |
+| **05** | #6 | Current-month & busiest-period KPIs | Headline metric cards with historical median comparison | ✓ Completed |
+| **06** | #7 | Anomaly detection & calendar sync | Robust z-score anomaly detector linked to calendar highlights | ✓ Completed |
+| **07** | #8 | Aggregate CSV export | Client-side RFC 4180 CSV builder (`firewatch_aggregate_*.csv`) | ✓ Completed |
+| **08** | #9 | Calendar PNG export | Presentation-ready PNG snapshot via ECharts `getDataURL` | ✓ Completed |
+| **09** | #10 | Shared selection integration & a11y | End-to-end integration with shared app and WCAG audit | ✓ Completed |
+| **10** | #11 | Capped raw detection CSV export | Safe on-demand raw export with 50,000 row cap protection | ✓ Completed |
+| **11** | #12 | Submission checklist & handoff | Final artifact verification, attribution, and delivery handoff | ✓ Completed |
 
 ---
 

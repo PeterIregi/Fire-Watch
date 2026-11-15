@@ -105,4 +105,4 @@ Team Tazama (Swahili for "look" or "watch").
 
 ## License
 
-To be decided before submission.
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Team Tazama.
