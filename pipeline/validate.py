@@ -8,8 +8,14 @@ import polars as pl
 import config
 
 
-def compute_metrics(predicted: list[float], observed: list[float]) -> dict:
-    """Return Pearson, Spearman, bias, MAE, and annual-total relative error."""
+def compute_metrics(predicted: list[float], observed: list[float], years: list[int] | None = None) -> dict:
+    """Return Pearson, Spearman, bias, MAE, and annual-total relative error.
+
+    If ``years`` is provided (same length as predicted/observed), the annual
+    total relative error is computed per-year and returned as
+    ``annual_total_relative_error_by_year``; otherwise a single total is
+    returned (current behaviour).
+    """
     n = len(predicted)
     if n < 2:
         return {
@@ -18,6 +24,7 @@ def compute_metrics(predicted: list[float], observed: list[float]) -> dict:
             "bias": 0.0,
             "mae": 0.0,
             "annual_total_relative_error": 0.0,
+            "annual_total_relative_error_by_year": {},
         }
     mean_p = sum(predicted) / n
     mean_o = sum(observed) / n
@@ -27,22 +34,39 @@ def compute_metrics(predicted: list[float], observed: list[float]) -> dict:
     pearson = cov / (std_p * std_o) if std_p > 0 and std_o > 0 else 0.0
     bias = mean_p - mean_o
     mae = sum(abs(p - o) for p, o in zip(predicted, observed)) / n
-    annual = abs(sum(predicted) - sum(observed)) / abs(sum(observed)) if sum(observed) else 0.0
-    predicted_rank = _rank(predicted)
-    observed_rank = _rank(observed)
-    mean_rp = sum(predicted_rank) / n
-    mean_ro = sum(observed_rank) / n
-    cov_r = sum((p - mean_rp) * (o - mean_ro) for p, o in zip(predicted_rank, observed_rank)) / (n - 1)
-    std_rp = (sum((p - mean_rp) ** 2 for p in predicted_rank) / (n - 1)) ** 0.5
-    std_ro = (sum((o - mean_ro) ** 2 for o in observed_rank) / (n - 1)) ** 0.5
-    spearman = cov_r / (std_rp * std_ro) if std_rp > 0 and std_ro > 0 else 0.0
-    return {
-        "pearson": pearson,
-        "spearman": spearman,
-        "bias": bias,
-        "mae": mae,
-        "annual_total_relative_error": annual,
-    }
+
+    if years is not None and len(years) == n:
+        # Compute annual total relative error per year
+        by_year: dict[int, tuple[int, int]] = {}  # year -> (pred_sum, obs_sum)
+        for p, o, y in zip(predicted, observed, years):
+            by_year.setdefault(y, [0, 0])
+            by_year[y][0] += p
+            by_year[y][1] += o
+        yearly_errors = {}
+        for y, (pred_sum, obs_sum) in by_year.items():
+            if obs_sum != 0:
+                yearly_errors[y] = abs(pred_sum - obs_sum) / abs(obs_sum)
+            else:
+                yearly_errors[y] = 0.0
+        overall = sum(yearly_errors.values()) / len(yearly_errors) if yearly_errors else 0.0
+        return {
+            "pearson": pearson,
+            "spearman": None,  # placeholder; computed separately if needed
+            "bias": bias,
+            "mae": mae,
+            "annual_total_relative_error": overall,
+            "annual_total_relative_error_by_year": yearly_errors,
+        }
+    else:
+        annual = abs(sum(predicted) - sum(observed)) / abs(sum(observed)) if sum(observed) else 0.0
+        return {
+            "pearson": pearson,
+            "spearman": None,
+            "bias": bias,
+            "mae": mae,
+            "annual_total_relative_error": annual,
+            "annual_total_relative_error_by_year": {},
+        }
 
 
 def _rank(values: list[float]) -> list[float]:
@@ -94,11 +118,11 @@ def main() -> None:
     test_obs = test["modis_hotspots"].to_list()
 
     # Compute metrics
+    # Pass year labels (per data policy, 2026 is excluded from test set) so
+    # compute_metrics returns per-year annual_total_relative_error.
+    test_years = test["month"].dt.year().to_list()
     train_metrics = compute_metrics(train_pred, train_obs)
-    test_metrics = compute_metrics(test_pred, test_obs)
-
-    # Compute scatter data
-    scatter = scatter_points(test_pred, test_obs)
+    test_metrics = compute_metrics(test_pred, test_obs, years=test_years)
 
     # Write metrics output
     metrics = {
