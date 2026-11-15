@@ -6,6 +6,7 @@ import {
   isValidMonth,
 } from '../src/calendar/dataHelpers.js';
 import { CalendarHeatmap } from '../src/calendar/CalendarHeatmap.jsx';
+import { ComparisonChart } from '../src/charts/ComparisonChart.jsx';
 import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES } from './fixtures.js';
 
 export function PreviewApp() {
@@ -336,6 +337,9 @@ export function PreviewApp() {
               setHighlightedMonth(prev => prev === monthStr ? null : monthStr);
             }}
           />
+
+          {/* Sensor Comparison Line Chart */}
+          <ComparisonChart series={displayedSeries} />
 
           <div
             id="preview-analytics-mount-slot"
