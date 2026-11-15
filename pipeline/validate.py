@@ -37,7 +37,9 @@ def compute_metrics(predicted: list[float], observed: list[float]) -> dict:
 
 def scatter_points(predicted: list[float], observed: list[float]) -> list[list[float]]:
     """Return [predicted, observed] pairs for the validation scatter plot."""
-    ...
+    return [
+        [p, o] for p, o in zip(predicted, observed)
+    ]
 
 
 def parse_args() -> argparse.Namespace:
