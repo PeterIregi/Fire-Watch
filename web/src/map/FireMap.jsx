@@ -341,7 +341,7 @@ L.geoJSON(JSON.parse(world), {
       >
         <div className="legend-heading">
           <span className="legend-indicator" />
-          <strong>FIRE ACTIVITY</strong>
+          <strong>Fire activity</strong>
         </div>
 
         <p>Relative intensity</p>
@@ -358,8 +358,8 @@ L.geoJSON(JSON.parse(world), {
         </div>
 
         <div className="legend-labels">
-          <span>LOW</span>
-          <span>HIGH</span>
+          <span>Low</span>
+          <span>High</span>
         </div>
       </aside>
     )}
