@@ -7,6 +7,7 @@ import {
 } from '../src/calendar/dataHelpers.js';
 import { CalendarHeatmap } from '../src/calendar/CalendarHeatmap.jsx';
 import { ComparisonChart } from '../src/charts/ComparisonChart.jsx';
+import { KpiCards } from '../src/kpis/KpiCards.jsx';
 import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES } from './fixtures.js';
 
 export function PreviewApp() {
@@ -325,6 +326,13 @@ export function PreviewApp() {
               <strong style={{ color: '#38bdf8' }}>{SOURCE_METADATA[source].label}</strong>
             </div>
           </div>
+
+          {/* Headline KPIs */}
+          <KpiCards
+            displayedSeries={displayedSeries}
+            fullSeries={SYNTHETIC_MONTHLY_SERIES}
+            source={source}
+          />
 
           {/* Calendar Heatmap */}
           <CalendarHeatmap
