@@ -9,8 +9,15 @@ import polars as pl
 import config
 
 
-def fit_seasonal_k(frame: pl.DataFrame) -> dict[str, float]:
-    """Fit MODIS-equivalent k per season from 1-degree x 1-degree x month blocks."""
+def fit_seasonal_k(frame: pl.DataFrame, train_year_start: int = 2012, train_year_end: int = 2018) -> dict[str, float]:
+    """Fit MODIS-equivalent k per season from 1-degree x 1-degree x month blocks.
+
+    Only trains on the overlap period (default 2012-2018). Raises RuntimeError
+    if any season (dry/wet) has zero fire-days in the train period.
+    """
+    # Filter to train period by year (Date column, not YYYYMM int)
+    frame = frame.filter(pl.col("month").dt.year().is_between(train_year_start, train_year_end))
+
     # Extract month number from Date column (Polars 2.1 compatible)
     frame = frame.with_columns(pl.col("month").dt.month().alias("month_num"))
     totals = (
@@ -24,6 +31,14 @@ def fit_seasonal_k(frame: pl.DataFrame) -> dict[str, float]:
         )
         .filter(pl.col("virs") > 0)
     )
+
+    # Fail loudly if any season has no data in the train period
+    required_seasons = {"dry", "wet"}
+    found_seasons = set(totals["season"].to_list())
+    missing = required_seasons - found_seasons
+    if missing:
+        raise RuntimeError(f"fit_seasonal_k: no data for season(s) {missing} in train period {train_year_start}-{train_year_end}")
+
     return {
         row["season"]: row["modis"] / row["virs"]
         for row in totals.iter_rows(named=True)
@@ -60,7 +75,7 @@ def main() -> None:
     if cell_month.is_empty():
         raise RuntimeError("cell-month raw table is empty")
 
-    k_by_season = fit_seasonal_k(cell_month)
+    k_by_season = fit_seasonal_k(cell_month, train_year_start=2012, train_year_end=2018)
     cell_month = apply_harmonization(cell_month, k_by_season)
     cell_month.write_parquet(config.CELL_MONTH, compression="zstd")
 
