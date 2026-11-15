@@ -1,0 +1,8 @@
+"""Make pipeline modules importable when tests run from the repository root."""
+
+import sys
+from pathlib import Path
+
+PIPELINE_DIR = Path(__file__).resolve().parents[1]
+if str(PIPELINE_DIR) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_DIR))

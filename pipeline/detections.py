@@ -63,7 +63,7 @@ def export_year(frame: pl.DataFrame, year: int, out_dir: Path) -> tuple[int, int
     year_frame = (
         frame.filter(pl.col("_year") == year)
         .drop("_year")
-        .sort(["acq_date", "acq_time", "satellite", "lat", "lon"])
+        .sort(COLUMNS)
     )
     payload = {
         "year": year,
