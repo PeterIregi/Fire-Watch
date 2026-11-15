@@ -89,21 +89,38 @@ function FireMap() {
 
   const { aoi, source, dateRange } = selection
 
- const activityCells = useMemo(() => {
+ 
+const activityCells = useMemo(() => {
   if (!dataset || !dateRange.start || !dateRange.end) {
     return []
   }
 
-  return dataset.cells.map((cell) => ({
-    ...cell,
-    activity: getCellActivity(
-      dataset,
-      cell.id,
-      source,
-      dateRange,
-    ),
-  }))
-}, [dataset, source, dateRange])
+  return dataset.cells
+    .filter((cell) => {
+      if (!aoi) return true
+
+      const halfGrid = dataset.meta.grid_deg / 2
+      const centerLat = cell.lat + halfGrid
+      const centerLon = cell.lon + halfGrid
+
+      return (
+        centerLat >= aoi.south &&
+        centerLat <= aoi.north &&
+        centerLon >= aoi.west &&
+        centerLon <= aoi.east
+      )
+    })
+    .map((cell) => ({
+      ...cell,
+      activity: getCellActivity(
+        dataset,
+        cell.id,
+        source,
+        dateRange,
+      ),
+    }))
+}, [dataset, source, dateRange, aoi])
+
 
 const hasActivity = activityCells.some(
   (cell) => cell.activity > 0,
@@ -273,6 +290,8 @@ L.geoJSON(JSON.parse(world), {
   }, [dataset, activityCells, source])
 
   // Synchronise the visible AOI rectangle.
+  
+  // Synchronise the visible AOI rectangle and map viewport.
   useEffect(() => {
     const map = mapRef.current
 
@@ -295,7 +314,16 @@ L.geoJSON(JSON.parse(world), {
 
     rectangle.addTo(map)
     selectionLayerRef.current = rectangle
+
+    // Zoom into the selected area.
+    map.fitBounds(rectangle.getBounds(), {
+      padding: [48, 48],
+      maxZoom: 8,
+      animate: true,
+      duration: 0.8,
+    })
   }, [aoi])
+
 
  return (
   <div className="firewatch-map-shell">
