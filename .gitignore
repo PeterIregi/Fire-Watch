@@ -8,6 +8,7 @@
 
 # Python
 .venv/
+*.parquet
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -18,6 +19,8 @@ __pycache__/
 build/
 
 # Node / Vite
+.pnp
+.pnp.js
 node_modules/
 dist/
 web/.vite/

@@ -1,6 +1,26 @@
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useFireWatch } from './store/useFireWatch.js'
 import FireMap from './map/FireMap.jsx'
+import {
+  SOURCE_METADATA,
+  SOURCES,
+  aggregateCellRowsToMonthlySeries,
+  filterSeriesByDateRange,
+  formatHotspotValue,
+} from './calendar/dataHelpers.js'
+import { CalendarHeatmap } from './calendar/CalendarHeatmap.jsx'
+import { ComparisonChart } from './charts/ComparisonChart.jsx'
+import { KpiCards } from './kpis/KpiCards.jsx'
+import { AnomaliesList } from './anomalies/AnomaliesList.jsx'
+import { ExportPanel } from './export/ExportPanel.jsx'
+import {
+  createPresentationCalendarPng,
+  downloadDataUrl,
+} from './export/calendarPng.js'
+
+function formatValidationMetric(value, digits = 3) {
+  return Number.isFinite(value) ? value.toFixed(digits) : '—'
+}
 
 function App() {
   const {
@@ -17,6 +37,103 @@ function App() {
   } = useFireWatch()
 
   const months = dataset?.meta.months ?? []
+  const calendarRef = useRef(null)
+  const [highlightedMonth, setHighlightedMonth] = useState(null)
+
+  const { fullSeries, displayedSeries, cellRows } = useMemo(() => {
+    if (!dataset) {
+      return { fullSeries: [], displayedSeries: [], cellRows: [] }
+    }
+
+    const rows = []
+
+    for (const cell of selectedCells) {
+      const records = dataset.data[cell.id] ?? []
+
+      for (const record of records) {
+        const [
+          monthIndex,
+          modisHotspots,
+          modisFireDays,
+          viirsHotspots,
+          viirsFireDays,
+          harmonized,
+        ] = record
+        const month = dataset.meta.months[monthIndex]
+
+        if (!month) continue
+
+        rows.push({
+          cell_id: cell.id,
+          lat: cell.lat,
+          lon: cell.lon,
+          month,
+          modis_hotspots: modisHotspots,
+          modis_fire_days: modisFireDays,
+          viirs_hotspots: viirsHotspots,
+          viirs_fire_days: viirsFireDays,
+          harmonized,
+        })
+      }
+    }
+
+    const full = aggregateCellRowsToMonthlySeries(rows)
+    const displayed = filterSeriesByDateRange(
+      full,
+      selection.dateRange.start,
+      selection.dateRange.end,
+    )
+
+    return { fullSeries: full, displayedSeries: displayed, cellRows: rows }
+  }, [
+    dataset,
+    selectedCells,
+    selection.dateRange.start,
+    selection.dateRange.end,
+  ])
+
+  const exportBbox = selection.aoi
+    ? [
+        selection.aoi.west,
+        selection.aoi.south,
+        selection.aoi.east,
+        selection.aoi.north,
+      ]
+    : null
+
+  const validation = dataset?.meta?.validation ?? {}
+  const calibration = dataset?.meta?.calibration ?? {}
+  const validationPending =
+    validation.status === 'placeholder' ||
+    calibration.status === 'placeholder'
+
+  async function handleExportPng() {
+    if (!calendarRef.current) return
+
+    const rawDataUrl = calendarRef.current.getDataUrl()
+
+    if (!rawDataUrl) {
+      window.alert('Calendar has no active data to export.')
+      return
+    }
+
+    const sourceMeta =
+      SOURCE_METADATA[selection.source] ||
+      SOURCE_METADATA[SOURCES.HARMONIZED]
+
+    const compositedUrl = await createPresentationCalendarPng(rawDataUrl, {
+      aoiName: selection.aoi ? 'Custom AOI' : 'Tanzania study area',
+      dateRange: `${selection.dateRange.start} to ${selection.dateRange.end}`,
+      sourceLabel: sourceMeta.label,
+      unit: sourceMeta.unit,
+    })
+
+    downloadDataUrl(compositedUrl, 'firewatch_calendar.png')
+  }
+
+  function toggleHighlightedMonth(month) {
+    setHighlightedMonth((current) => (current === month ? null : month))
+  }
 
   const [coordinates, setCoordinates] = useState({
   north: '',
@@ -466,7 +583,10 @@ function handleCoordinateSubmit(event) {
             </div>
 
             {/* ANALYTICS WORKSPACE */}
-            <section className="analytics-placeholder">
+            <section
+              className="analytics-workspace"
+              aria-label="Temporal fire activity analysis"
+            >
               <div className="analytics-heading">
                 <div>
                   <span className="workspace-overline">
@@ -476,18 +596,118 @@ function handleCoordinateSubmit(event) {
                   <h2>Temporal activity analysis</h2>
 
                   <p>
-                    Explore changes in satellite-detected fire activity
-                    across the selected observation period.
+                    Explore satellite-detected fire activity across the
+                    selected observation period, compare MODIS with
+                    VIIRS, and export the current selection.
                   </p>
                 </div>
 
-                <span className="analytics-tag">COMING NEXT</span>
+                <span className="analytics-tag">LIVE ANALYTICS</span>
               </div>
 
-              <div className="analytics-preview">
-                <span className="analytics-preview-line" />
-                <span>MONTHLY OBSERVATION SERIES</span>
-              </div>
+              <KpiCards
+                displayedSeries={displayedSeries}
+                fullSeries={fullSeries}
+                source={selection.source}
+              />
+
+              <CalendarHeatmap
+                ref={calendarRef}
+                series={displayedSeries}
+                source={selection.source}
+                onSourceChange={setSource}
+                highlightedMonth={highlightedMonth}
+                onCellClick={toggleHighlightedMonth}
+              />
+
+              <ComparisonChart series={displayedSeries} />
+
+              <AnomaliesList
+                displayedSeries={displayedSeries}
+                fullSeries={fullSeries}
+                source={selection.source}
+                highlightedMonth={highlightedMonth}
+                onSelectAnomaly={toggleHighlightedMonth}
+              />
+
+              <ExportPanel
+                cellRows={cellRows}
+                startMonth={selection.dateRange.start}
+                endMonth={selection.dateRange.end}
+                bbox={exportBbox}
+                onExportPng={handleExportPng}
+              />
+
+              <section
+                aria-label="Harmonization validation metrics"
+                className="validation-panel"
+              >
+                <div className="validation-heading">
+                  <div>
+                    <span className="workspace-overline">
+                      DATA QUALITY / MODULE 03
+                    </span>
+
+                    <h2>Harmonization validation</h2>
+
+                    <p>
+                      Calibration metadata reported by the data pipeline.
+                      Held-out years are used where available.
+                    </p>
+                  </div>
+
+                  <span className="analytics-tag">
+                    {validationPending ? 'CALIBRATION PENDING' : 'VALIDATED'}
+                  </span>
+                </div>
+
+                <div className="validation-grid">
+                  <article>
+                    <span>PEARSON CORRELATION (R)</span>
+                    <strong>{formatValidationMetric(validation.pearson)}</strong>
+                    <small>Linear agreement between sensors</small>
+                  </article>
+
+                  <article>
+                    <span>SPEARMAN RANK (ρ)</span>
+                    <strong>{formatValidationMetric(validation.spearman)}</strong>
+                    <small>Rank-order agreement</small>
+                  </article>
+
+                  <article>
+                    <span>MEAN ABSOLUTE ERROR</span>
+                    <strong>{formatValidationMetric(validation.mae)}</strong>
+                    <small>Hotspots per grid cell-month</small>
+                  </article>
+
+                  <article>
+                    <span>ANNUAL TOTAL ERROR</span>
+                    <strong>
+                      {Number.isFinite(
+                        validation.annual_total_relative_error,
+                      )
+                        ? `${(
+                            validation.annual_total_relative_error * 100
+                          ).toFixed(1)}%`
+                        : '—'}
+                    </strong>
+                    <small>Relative error on annual totals</small>
+                  </article>
+                </div>
+
+                <p className="validation-note">
+                  {validationPending
+                    ? 'The bundled dataset is a placeholder export. Validation figures will populate when the pipeline calibration run replaces it.'
+                    : `Training period ${calibration.train ?? '—'} · test period ${calibration.test ?? '—'}.`}
+                  {Number.isFinite(validation.bias) && (
+                    <>
+                      {' '}
+                      Bias:{' '}
+                      {formatHotspotValue(validation.bias, selection.source)}
+                    </>
+                  )}
+                </p>
+              </section>
             </section>
           </section>
         </section>
