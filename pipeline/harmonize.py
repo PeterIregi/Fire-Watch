@@ -31,7 +31,13 @@ def fit_seasonal_k(frame: pl.DataFrame) -> dict[str, float]:
 
 def apply_harmonization(frame: pl.DataFrame, k_by_season: dict[str, float]) -> pl.DataFrame:
     """Write harmonized = k_season * VIIRS fire-days onto the cell-month frame."""
-    ...
+    k_by_month = pl.col("month").apply(season_of).map_elements(
+        lambda season: k_by_season.get(season, 0.0), return_dtype=pl.Float64
+    )
+    harmonized = pl.when(pl.col("month") < 201201).then(
+        pl.col("modis_hotspots").cast(pl.Float64)
+    ).otherwise(pl.col("viirs_fire_days").cast(pl.Float64) * k_by_month).alias("harmonized")
+    return frame.with_columns(harmonized)
 
 
 def parse_args() -> argparse.Namespace:
