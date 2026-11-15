@@ -5,6 +5,7 @@ import {
   filterSeriesByDateRange,
   isValidMonth,
 } from '../src/calendar/dataHelpers.js';
+import { CalendarHeatmap } from '../src/calendar/CalendarHeatmap.jsx';
 import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES } from './fixtures.js';
 
 export function PreviewApp() {
@@ -14,6 +15,7 @@ export function PreviewApp() {
   const [source, setSource] = useState(SOURCES.HARMONIZED);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateEmpty, setSimulateEmpty] = useState(false);
+  const [highlightedMonth, setHighlightedMonth] = useState(null);
 
   // Active AOI metadata
   const currentAoi = useMemo(() => {
@@ -323,6 +325,18 @@ export function PreviewApp() {
             </div>
           </div>
 
+          {/* Calendar Heatmap */}
+          <CalendarHeatmap
+            series={displayedSeries}
+            source={source}
+            onSourceChange={setSource}
+            highlightedMonth={highlightedMonth}
+            onCellClick={(monthStr, val) => {
+              console.log('Cell clicked:', monthStr, val);
+              setHighlightedMonth(prev => prev === monthStr ? null : monthStr);
+            }}
+          />
+
           <div
             id="preview-analytics-mount-slot"
             style={{
@@ -336,7 +350,7 @@ export function PreviewApp() {
           >
             <p style={{ fontWeight: 600, color: '#cbd5e1' }}>Analytics Components Mount Point</p>
             <p style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
-              Calendar heatmap, comparison chart, KPIs, anomalies, and downloads mount here in subsequent issues.
+              Comparison chart, KPIs, anomalies, and downloads mount here in subsequent issues.
             </p>
           </div>
         </main>
