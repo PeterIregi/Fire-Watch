@@ -10,7 +10,7 @@ and may change names. Update this file as the real commands settle.
 - [uv](https://docs.astral.sh/uv/) for the Python environment
 - Node.js 22 LTS or newer and npm (Vite 8 requires 20.19+ or 22.12+)
 - Git
-- A free NASA Earthdata / FIRMS account and a FIRMS **MAP_KEY**
+- Optional: a FIRMS **MAP_KEY** only if you need to refresh or extend the download
 - Disk space: the raw download is about 0.7 GB; a few GB in total covers
   intermediate files
 
@@ -31,19 +31,20 @@ repository; see [scaffold.md](scaffold.md) for the full layout. The root
 
 **The team has already downloaded the data** (about 0.7 GB, shared through the
 Drive folder linked in the README). Put the CSVs under `data/raw/modis/` and
-`data/raw/viirs/`. The ingest step reads every `*.csv` in those folders, so file
-names do not matter. A MAP_KEY is only needed to refresh or extend the data;
-the rest of this section applies only if you need to download again.
+`data/raw/viirs/`. The ingest step reads `modis_*.csv` from the MODIS folder
+and `viirs_*.csv` from the VIIRS folder. A MAP_KEY is only needed to refresh or
+extend the data; the rest of this section applies only if you need to download
+again.
 
 1. Request a MAP_KEY on the FIRMS website (look for the Area API / MAP_KEY
    registration page).
 2. Store it as an environment variable, never in the repository:
 
 ```bash
-cp .env.example .env     # then edit .env
-# .env
-FIRMS_MAP_KEY=your_key_here
+export FIRMS_MAP_KEY=your_key_here
 ```
+
+The current archive-only build does not require a MAP_KEY or an `.env` file.
 
 3. Test a small request before any bulk download.
 
@@ -68,23 +69,27 @@ Products to pull (confirm names and availability on FIRMS):
 
 ```bash
 cd pipeline
-uv venv .venv
+uv sync --all-groups
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-uv pip install -r requirements.txt
 ```
 
-`requirements.txt` is pinned. Re-freeze it with
-`uv pip freeze > requirements.txt` after adding a dependency.
+`pyproject.toml` and `uv.lock` are the source of truth. After adding a
+dependency, regenerate the pinned export:
+
+```bash
+uv export --format requirements-txt --no-hashes --all-groups --no-emit-project -o requirements.txt
+```
 
 Planned entry points (run in order; each step reads the previous step's output):
 
 ```bash
 python ingest.py     --raw-dir ../data/raw --bbox 29.3 -11.8 40.5 -0.9
-python clean.py      --modis-min-conf 30 --viirs-drop low
+python clean.py      --modis-min-conf 30 --viirs-drop l low
 python grid.py       --grid 0.25
 python aggregate.py
 python harmonize.py  --train 2012-2018 --test 2019-2025
 python export.py     --out ../web/public/data/firewatch.json.gz
+python detections.py --out-dir ../web/public/data/detections
 ```
 
 Expected outputs:
@@ -92,8 +97,9 @@ Expected outputs:
 | Step | Output |
 |---|---|
 | ingest | `data/raw/...` yearly CSVs |
-| clean | `data/interim/clean_*.parquet` |
-| grid / aggregate | `data/interim/cell_month.parquet` |
+| clean | `data/interim/clean_detections.parquet` |
+| grid | `data/interim/gridded_detections.parquet` |
+| aggregate | `data/interim/cell_month_raw.parquet` |
 | harmonize | calibration coefficients, validation metrics, `validation_scatter.png` |
 | export | `web/public/data/firewatch.json.gz` and `web/public/data/detections/YYYY.json.gz` |
 

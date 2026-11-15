@@ -70,7 +70,6 @@ managers and firefighters.
 ```
 Fire-Watch/
   README.md
-  .env.example             FIRMS MAP_KEY template
   docs/                    design, setup, plan, task split, scaffold
   pipeline/                Python: ingest, clean, grid, harmonize, export
   web/                     React + Vite + Leaflet + ECharts static app
