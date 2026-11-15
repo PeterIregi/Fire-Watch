@@ -75,4 +75,43 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    ...
+
+    # Load harmonized cell-month data
+    cell_month = pl.read_parquet(config.CELL_MONTH)
+    if cell_month.is_empty():
+        raise RuntimeError("cell-month table is empty, run harmonize.py first")
+
+    # Separate train / test periods
+    train = cell_month.filter(pl.col("month") <= 201812)
+    test = cell_month.filter(pl.col("month") >= 201901)
+
+    # Build predicted (harmonized) and observed (MODIS) vectors
+    train_pred = train["harmonized"].to_list()
+    train_obs = train["modis_hotspots"].to_list()
+    test_pred = test["harmonized"].to_list()
+    test_obs = test["modis_hotspots"].to_list()
+
+    # Compute metrics
+    train_metrics = compute_metrics(train_pred, train_obs)
+    test_metrics = compute_metrics(test_pred, test_obs)
+
+    # Compute scatter data
+    scatter = scatter_points(test_pred, test_obs)
+
+    # Write metrics output
+    metrics = {
+        "train": train_metrics,
+        "test": test_metrics,
+        "scatter_points": scatter,
+    }
+    OUT_METRICS = config.INTERIM_DIR / "validation_metrics.json"
+    OUT_METRICS.parent.mkdir(parents=True, exist_ok=True)
+    OUT_METRICS.write_text(json.dumps(metrics, indent=2))
+
+    print(f"Train metrics: {train_metrics}")
+    print(f"Test metrics: {test_metrics}")
+    print(f"Wrote {OUT_METRICS} ({len(scatter)} scatter points)")
+
+
+if __name__ == "__main__":
+    main()

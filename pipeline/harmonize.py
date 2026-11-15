@@ -49,4 +49,31 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    ...
+
+    cell_month = pl.read_parquet(config.CELL_MONTH_RAW)
+    if cell_month.is_empty():
+        raise RuntimeError("cell-month raw table is empty")
+
+    k_by_season = fit_seasonal_k(cell_month)
+    cell_month = apply_harmonization(cell_month, k_by_season)
+    cell_month.write_parquet(config.CELL_MONTH, compression="zstd")
+
+    # Write calibration.json
+    calibration = {
+        "k_by_season": k_by_season,
+        "train_range": args.train,
+        "test_range": args.test,
+        "status": "fitted",
+    }
+    OUT_CALIBRATION = config.INTERIM_DIR / "calibration.json"
+    OUT_CALIBRATION.parent.mkdir(parents=True, exist_ok=True)
+    OUT_CALIBRATION.write_text(json.dumps(calibration, indent=2))
+
+    print(f"Seasonal k: {k_by_season}")
+    print(f"Wrote {config.CELL_MONTH}")
+    print(f"Wrote {OUT_CALIBRATION}")
+
+
+if __name__ == "__main__":
+    import json
+    main()
