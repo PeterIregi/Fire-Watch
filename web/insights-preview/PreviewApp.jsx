@@ -8,6 +8,7 @@ import {
 import { CalendarHeatmap } from '../src/calendar/CalendarHeatmap.jsx';
 import { ComparisonChart } from '../src/charts/ComparisonChart.jsx';
 import { KpiCards } from '../src/kpis/KpiCards.jsx';
+import { AnomaliesList } from '../src/anomalies/AnomaliesList.jsx';
 import { SAMPLE_AOIS, SYNTHETIC_MONTHLY_SERIES } from './fixtures.js';
 
 export function PreviewApp() {
@@ -348,6 +349,17 @@ export function PreviewApp() {
 
           {/* Sensor Comparison Line Chart */}
           <ComparisonChart series={displayedSeries} />
+
+          {/* Unusual Periods (Anomalies) */}
+          <AnomaliesList
+            displayedSeries={displayedSeries}
+            fullSeries={SYNTHETIC_MONTHLY_SERIES}
+            source={source}
+            highlightedMonth={highlightedMonth}
+            onSelectAnomaly={(monthStr) => {
+              setHighlightedMonth(prev => prev === monthStr ? null : monthStr);
+            }}
+          />
 
           <div
             id="preview-analytics-mount-slot"
